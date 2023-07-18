@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 
 import { createMockMetadata } from "__support__/metadata";
 import { renderWithProviders } from "__support__/ui";
+import type { DatetimeUnit } from "metabase-types/api/query";
 import {
   createSampleDatabase,
   SAMPLE_DB_ID,
@@ -17,28 +18,35 @@ import Filter from "metabase-lib/queries/structured/Filter";
 import StructuredQuery from "metabase-lib/queries/StructuredQuery";
 import { FilterPopover } from "./FilterPopover";
 
-const metadata = createMockMetadata({
-  databases: [createSampleDatabase()],
-});
-
 const QUERY = Question.create({
   databaseId: SAMPLE_DB_ID,
   tableId: ORDERS_ID,
-  metadata,
-})
-  .query()
-  // eslint-disable-next-line
-  // @ts-ignore
-  .aggregate(["count"])
-  .filter(["time-interval", ["field", ORDERS.CREATED_AT, null], -30, "day"])
-  .filter(["=", ["field", ORDERS.TOTAL, null], 1234])
-  .filter([
+  metadata: createMockMetadata({
+    databases: [createSampleDatabase()],
+  }),
+}).query() as StructuredQuery;
+
+const RELATIVE_DAY_FILTER = new Filter(
+  ["time-interval", ["field", ORDERS.CREATED_AT, null], -30, "day"],
+  null,
+  QUERY,
+);
+
+const NUMERIC_FILTER = new Filter(
+  ["=", ["field", ORDERS.TOTAL, null], 1234],
+  null,
+  QUERY,
+);
+
+const STRING_CONTAINS_FILTER = new Filter(
+  [
     "contains",
     ["field", PRODUCTS.TITLE, { "source-field": ORDERS.PRODUCT_ID }],
     "asdf",
-  ]);
-const [RELATIVE_DAY_FILTER, NUMERIC_FILTER, STRING_CONTAINS_FILTER]: Filter[] =
-  QUERY.filters();
+  ],
+  null,
+  QUERY,
+);
 
 const dummyFunction = jest.fn();
 
@@ -65,14 +73,69 @@ const setup = ({
   );
 };
 
+const dateType = (temporalUnit: DatetimeUnit) => ({
+  "base-type": "type/DateTime",
+  "temporal-unit": temporalUnit,
+});
+
 describe("FilterPopover", () => {
   describe("existing filter", () => {
     describe("DatePicker", () => {
       it("should render a date picker for a date filter", () => {
         setup({ filter: RELATIVE_DAY_FILTER });
-
         expect(screen.getByTestId("date-picker")).toBeInTheDocument();
       });
+      it.each([
+        {
+          dateTypeLabel: "single day",
+          mbql: ["=", ["field", ORDERS.CREATED_AT, null], "2018-01-23"],
+          values: ["01/23/2018"],
+        },
+        {
+          dateTypeLabel: "day range",
+          mbql: [
+            "between",
+            ["field", ORDERS.CREATED_AT, null],
+            "2018-01-23",
+            "2018-02-10",
+          ],
+          values: ["01/23/2018", "02/10/2018"],
+        },
+        {
+          dateTypeLabel: "single time",
+          mbql: ["=", ["field", ORDERS.CREATED_AT, null], "2018-01-23T10:23"],
+          values: ["01/23/2018", "10", "23"],
+        },
+        {
+          dateTypeLabel: "time range",
+          mbql: [
+            "between",
+            ["field", ORDERS.CREATED_AT, null],
+            "2018-01-23T10:23",
+            "2018-01-25T16:45",
+          ],
+          values: ["01/23/2018", "10", "23", "01/25/2018", "4", "45"],
+        },
+        {
+          dateTypeLabel: "single month",
+          mbql: [
+            "=",
+            ["field", ORDERS.CREATED_AT, dateType("month")],
+            "2018-01-01",
+          ],
+          values: ["01/01/2018", "01/31/2018"],
+        },
+      ])(
+        "should render a correctly initialized date picker for a $dateTypeLabel",
+        ({ mbql, values }) => {
+          setup({ filter: new Filter(mbql, null, QUERY) });
+          const textboxes = screen.getAllByRole("textbox");
+          expect(textboxes).toHaveLength(values.length);
+          for (let i = 0; i < values.length; i++) {
+            expect(textboxes[i]).toHaveValue(values[i]);
+          }
+        },
+      );
     });
     describe("filter operator selection", () => {
       it("should have an operator selector", () => {

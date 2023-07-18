@@ -7,11 +7,16 @@ import type {
   FieldFilter,
   FieldReference,
 } from "metabase-types/api";
-import { formatDateTimeRangeWithUnit } from "metabase/lib/formatting/date";
+import {
+  formatDateTimeRangeWithUnit,
+  normalizeDateTimeRangeWithUnit,
+} from "metabase/lib/formatting/date";
 import { parseTimestamp } from "metabase/lib/time";
 import { isExpression } from "metabase-lib/expressions";
 import { getFilterArgumentFormatOptions } from "metabase-lib/operators/utils";
 import {
+  DATE_FORMAT,
+  DATE_TIME_FORMAT,
   generateTimeFilterValuesDescriptions,
   getRelativeDatetimeField,
   isStartingFrom,
@@ -83,6 +88,50 @@ export default class Filter extends MBQLClause {
       }
     }
     return [undefined, undefined];
+  }
+
+  /**
+   * Tries to return a DatePicker-compatible version of this filter because:
+   *   1. DatePicker cannot currently handle week/month/quarter/year units, so we convert them to day units instead.
+   *   2. DatePicker needs dates and times to be specifically formatted to detect if time component should be shown.
+   *   3. SpecificDatePicker will not display dates or times unless they match DATE_FORMAT or DATE_TIME_FORMAT.
+   */
+  toDatePickerFilter() {
+    const [dates, unit] = this.specificDateArgsAndUnit();
+    if (!dates) {
+      return this;
+    }
+
+    const op = this.operatorName();
+    const dim = this.dimension();
+
+    if (["minute", "hour"].includes(unit)) {
+      return this.set([
+        op,
+        dim.withTemporalUnit(unit).mbql(),
+        ...dates.map(d => d.format(DATE_TIME_FORMAT)),
+      ]);
+    } else if (unit === "day") {
+      return this.set([
+        op,
+        dim.withTemporalUnit(unit).mbql(),
+        ...dates.map(d => d.format(DATE_FORMAT)),
+      ]);
+    } else if (["week", "month", "quarter", "year"].includes(unit)) {
+      const dayOp = op === "=" ? "between" : op; // e.g. equal-week/month/quarter/year is always between-days
+      const [start, end] = normalizeDateTimeRangeWithUnit(dates, unit);
+      const days = {
+        between: [start, end],
+        "<": [start],
+        ">": [end],
+      }[dayOp];
+      return this.set([
+        dayOp,
+        dim.withTemporalUnit("day").mbql(),
+        ...days.map(d => d.format(DATE_FORMAT)),
+      ]);
+    }
+    return this;
   }
 
   /**

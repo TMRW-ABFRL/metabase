@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import * as React from "react";
 import { t } from "ttag";
 
@@ -75,9 +75,14 @@ export function FilterPopover({
   onResize,
   onClose,
 }: Props) {
-  const [filter, setFilter] = useState(
-    filterProp instanceof Filter ? filterProp : null,
+  // Sometimes we have to convert the filter to something that the DatePicker can display.
+  const filterForPicker = useMemo(
+    () =>
+      filterProp instanceof Filter ? filterProp.toDatePickerFilter() : null,
+    [filterProp],
   );
+
+  const [filter, setFilter] = useState(filterForPicker);
   const [choosingField, setChoosingField] = useState(!filter);
   const [editingFilter, setEditingFilter] = useState(
     !!(filter?.isCustom() && !isStartingFrom(filter)),
@@ -93,10 +98,14 @@ export function FilterPopover({
   }, [query, previousQuery, filter]);
 
   useEffect(() => {
-    if (typeof onChange === "function" && filter && filter !== filterProp) {
+    if (
+      typeof onChange === "function" &&
+      filter &&
+      filter !== filterForPicker
+    ) {
       onChange(filter);
     }
-  }, [filter, onChange, filterProp]);
+  }, [filter, onChange, filterForPicker]);
 
   // we should only commit the filter once to prevent
   // inconsistent filters from being committed
@@ -232,7 +241,7 @@ export function FilterPopover({
   }
 
   const field = dimension.field();
-  const isNew = isNewProp || !filterProp?.operator();
+  const isNew = isNewProp || !filterForPicker?.operator();
   const primaryColor = color("brand");
   const onBack = () => {
     setChoosingField(true);
