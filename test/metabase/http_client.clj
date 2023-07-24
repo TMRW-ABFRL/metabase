@@ -211,11 +211,11 @@
 (defn- build-mock-request
   [method url headers http-body]
   (merge (cond-> (ring.mock/request method url)
-           http-body
-           (ring.mock/json-body http-body)
+           (some? headers)
+           (build-header headers)
 
-           headers
-           (build-header headers))
+           (some? http-body)
+           (ring.mock/json-body http-body))
          {:content-type :json}))
 
 (schema/defn ^:private -client
@@ -231,32 +231,39 @@
         req         (build-mock-request method url (:headers request-map) http-body)
         thunk       (fn []
                       (try
-                        (let [resp (metabase.server.handler/app req identity identity)]
-                          (update resp :body
-                                  (fn [body]
-                                    (cond
-                                      (instance? PipedInputStream body)
-                                      (with-open [r (clojure.java.io/reader body)]
-                                        (slurp r))
+                       (let [resp (metabase.server.handler/app req identity identity)]
+                         (update resp :body
+                                 (fn [body]
+                                   (cond
+                                    ;; read the text respone
+                                    (instance? PipedInputStream body)
+                                    (with-open [r (clojure.java.io/reader body)]
+                                      (slurp r))
 
-                                      #_(instance? StreamingResponse body)
-                                      :else
-                                      body))))
-                        #_(request-fn url request-map)
-                        (catch clojure.lang.ExceptionInfo e
-                          (log/debug e method-name url)
-                          (ex-data e))
-                        (catch Exception e
-                          (throw (ex-info (.getMessage e)
-                                          {:method  method-name
-                                           :url     url
-                                           :request request-map}
-                                          e)))))
+                                    ;; TODO: how to read the streaming response?
+                                    #_(instance? StreamingResponse body)
+                                    :else
+                                    body))))
+                       (catch clojure.lang.ExceptionInfo e
+                         (log/debug e method-name url)
+                         (ex-data e))
+                       (catch Exception e
+                         (throw (ex-info (.getMessage e)
+                                         {:method  method-name
+                                          :url     url
+                                          :request request-map}
+                                         e)))))
         ;; Now perform the HTTP request
         {:keys [status body], :as response} (thunk)]
     (log/debug method-name url status)
     (check-status-code method-name url body expected-status status)
     (update response :body parse-response)))
+
+#(metabase.test/user-http-request :crowberto :post 202 "card/1/query")
+; (metabase.async.streaming-response/->StreamingResponse
+;  #function[clojure.core/bound-fn*/fn--5818]
+;  {:content-type "application/json; charset=utf-8"}
+;  #object[clojure.core.async.impl.channels.ManyToManyChannel 0x328d7b37 "clojure.core.async.impl.channels.ManyToManyChannel@328d7b37"])
 
 (s/def ::http-client-args
   (s/cat
