@@ -535,7 +535,7 @@ class StructuredQueryInner extends AtomicQuery {
   }
 
   hasBreakouts() {
-    return this.breakouts().length > 0;
+    return this.queries().some(query => query.breakouts().length > 0);
   }
 
   hasSorts() {
