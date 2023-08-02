@@ -535,7 +535,11 @@ class StructuredQueryInner extends AtomicQuery {
   }
 
   hasBreakouts() {
-    return this.queries().some(query => query.breakouts().length > 0);
+    return this.breakouts().length > 0;
+  }
+
+  hasAnyBreakouts() {
+    return this.queries().some(query => query.hasBreakouts());
   }
 
   hasSorts() {
@@ -1192,7 +1196,7 @@ class StructuredQueryInner extends AtomicQuery {
   fieldsOptions(
     dimensionFilter: DimensionFilterFn = dimension => true,
   ): DimensionOptions {
-    if (this.isBareRows() && !this.hasBreakouts()) {
+    if (this.isBareRows() && !this.hasAnyBreakouts()) {
       return this.dimensionOptions(dimensionFilter);
     }
 
@@ -1410,7 +1414,7 @@ class StructuredQueryInner extends AtomicQuery {
   // TODO: this replicates logic in the backend, we should have integration tests to ensure they match
   // NOTE: these will not have the correct columnName() if there are duplicates
   columnDimensions(): Dimension[] {
-    if (this.hasAggregations() || this.hasBreakouts()) {
+    if (this.hasAggregations() || this.hasAnyBreakouts()) {
       const aggregations = this.aggregationDimensions();
       const breakouts = this.breakoutDimensions();
       return [...breakouts, ...aggregations];
