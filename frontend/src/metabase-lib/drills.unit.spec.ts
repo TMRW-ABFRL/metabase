@@ -1,6 +1,9 @@
-import { availableDrillThrus } from "metabase-lib/drills";
+// eslint-disable-next-line no-restricted-imports
+import { checkNotNull } from "metabase/core/utils/types";
 import { displayInfo } from "metabase-lib/metadata";
 import { orderableColumns } from "metabase-lib/order_by";
+import { toLegacyQuery } from "metabase-lib/query";
+import { availableDrillThrus, drillThru } from "./drills";
 import { columnFinder, createQuery } from "./test-helpers";
 
 describe("availableDrillThrus", () => {
@@ -35,5 +38,34 @@ describe("availableDrillThrus", () => {
       },
       { type: "drill-thru/summarize-column-by-time" },
     ]);
+  });
+});
+
+describe("drillThru", () => {
+  it("should apply sort drill", () => {
+    const query = createQuery();
+    const stageIndex = -1;
+    const columns = orderableColumns(query, stageIndex);
+    const column = columnFinder(query, columns)("ORDERS", "SUBTOTAL");
+
+    const drills = availableDrillThrus(
+      query,
+      stageIndex,
+      column,
+      undefined,
+      null,
+      null,
+    );
+
+    const sortDrill = checkNotNull(
+      drills.find(
+        drill =>
+          displayInfo(query, stageIndex, drill)?.type === "drill-thru/sort",
+      ),
+    );
+
+    const updatedQuery = drillThru(query, stageIndex, sortDrill, "asc");
+
+    expect(toLegacyQuery(updatedQuery)).toEqual({});
   });
 });

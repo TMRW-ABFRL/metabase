@@ -27,6 +27,8 @@ import type {
   TableDisplayInfo,
   TableMetadata,
   Query,
+  DrillThru,
+  DrillThruDisplayInfo,
 } from "./types";
 
 export function metadataProvider(
