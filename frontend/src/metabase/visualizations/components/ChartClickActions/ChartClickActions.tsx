@@ -3,27 +3,27 @@ import { connect } from "react-redux";
 import * as tippy from "tippy.js";
 import * as MetabaseAnalytics from "metabase/lib/analytics";
 import { getEventTarget } from "metabase/lib/dom";
-import { performAction } from "metabase/visualizations/lib/action";
+import {
+  // performAction,
+  performActionLib2,
+} from "metabase/visualizations/lib/action";
 import { OnChangeCardAndRun } from "metabase/visualizations/types";
 import { Dispatch } from "metabase-types/store";
 import { Series } from "metabase-types/api";
-import {
-  RegularClickAction,
-  ClickObject,
-  PopoverClickAction,
-  isPopoverClickAction,
-  isRegularClickAction,
-} from "metabase/modes/types";
-
+import { ClickObject, PopoverClickAction } from "metabase/modes/types";
+import * as Lib from "metabase-lib";
+import { toLegacyQuery } from "metabase-lib";
+import Question from "metabase-lib/Question";
 import { ChartClickActionsView } from "./ChartClickActionsView";
 import { getGALabelForAction } from "./utils";
 import { FlexTippyPopover } from "./ChartClickActions.styled";
 
 interface ChartClickActionsProps {
   clicked: ClickObject;
-  clickActions: RegularClickAction[];
+  clickActions: Lib.DrillThru[];
   series: Series;
   dispatch: Dispatch;
+  question: Question;
   onChangeCardAndRun: OnChangeCardAndRun;
   onUpdateVisualizationSettings: () => void;
   onClose?: () => void;
@@ -47,34 +47,47 @@ class ChartClickActions extends Component<ChartClickActionsProps, State> {
     }
   };
 
-  handleClickAction = (action: RegularClickAction) => {
-    const { dispatch, onChangeCardAndRun } = this.props;
-    if (isPopoverClickAction(action)) {
-      MetabaseAnalytics.trackStructEvent(
-        "Actions",
-        "Open Click Action Popover",
-        getGALabelForAction(action),
-      );
-      this.setState({ popoverAction: action });
-    } else {
-      const didPerform = performAction(action, {
-        dispatch,
-        onChangeCardAndRun,
-      });
-      if (didPerform) {
-        if (isRegularClickAction(action)) {
-          MetabaseAnalytics.trackStructEvent(
-            "Actions",
-            "Executed Click Action",
-            getGALabelForAction(action),
-          );
-        }
+  handleClickAction = (action: Lib.DrillThru, ...args: any[]) => {
+    // const { dispatch, onChangeCardAndRun } = this.props;
+    // if (isPopoverClickAction(action)) {
+    //   // MetabaseAnalytics.trackStructEvent(
+    //   //   "Actions",
+    //   //   "Open Click Action Popover",
+    //   //   getGALabelForAction(action),
+    //   // );
+    //   this.setState({ popoverAction: action });
+    // } else {
+    //   const didPerform = performAction(action, {
+    //     dispatch,
+    //     onChangeCardAndRun,
+    //   });
+    //   if (didPerform) {
+    //     if (isRegularClickAction(action)) {
+    //       // MetabaseAnalytics.trackStructEvent(
+    //       //   "Actions",
+    //       //   "Executed Click Action",
+    //       //   getGALabelForAction(action),
+    //       // );
+    //     }
+    //
+    //     this.close();
+    //   } else {
+    //     console.warn("No action performed", action);
+    //   }
+    // }
 
-        this.close();
-      } else {
-        console.warn("No action performed", action);
-      }
-    }
+    const { question, onChangeCardAndRun } = this.props;
+
+    const query = question._getMLv2Query();
+    const updatedQuery = performActionLib2(query, action, ...args);
+
+    const nextCard = question
+      .setDatasetQuery(toLegacyQuery(updatedQuery))
+      .card();
+
+    onChangeCardAndRun({
+      nextCard,
+    });
   };
 
   getPopoverReference = (clicked: ClickObject): HTMLElement | null => {
@@ -95,6 +108,7 @@ class ChartClickActions extends Component<ChartClickActionsProps, State> {
     const {
       clicked,
       clickActions,
+      question,
       onChangeCardAndRun,
       series,
       onUpdateVisualizationSettings,
@@ -103,6 +117,8 @@ class ChartClickActions extends Component<ChartClickActionsProps, State> {
     if (!clicked || !clickActions || clickActions.length === 0) {
       return null;
     }
+
+    const query = question._getMLv2Query();
 
     const { popoverAction } = this.state;
     let popover;
@@ -173,6 +189,8 @@ class ChartClickActions extends Component<ChartClickActionsProps, State> {
           ) : (
             <ChartClickActionsView
               clickActions={clickActions}
+              query={query}
+              clicked={clicked}
               onClick={this.handleClickAction}
             />
           )

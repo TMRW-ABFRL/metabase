@@ -234,28 +234,35 @@ class Visualization extends PureComponent {
     const seriesIndex = clicked.seriesIndex || 0;
     const card = this.state.series[seriesIndex].card;
     const question = this._getQuestionForCardCached(metadata, card);
-    const mode = this.getMode(this.props.mode, question);
 
+    // TODO: find a way to add "extraData" to drills
     const extraData = getExtraDataForClick(clicked);
-    if (extraData && Object.keys(extraData).length > 0) {
-      //debugger;
-    }
 
-    if (mode) {
-      window.__q = question._getMLv2Query();
-      const mlv2Drills = Lib.availableDrillThrus(
-        window.__q,
-        -1,
-        clicked.column,
-        clicked.value,
-        clicked.data,
+    const query = question._getMLv2Query();
+    const stageIndex = -1;
+
+    const actions = Lib.availableDrillThrus(
+      query,
+      stageIndex,
+      clicked.column,
+      clicked.value,
+      clicked.data,
+    );
+
+    // TODO: remove this after debugging
+    if (actions && actions.length > 0) {
+      // eslint-disable-next-line no-console
+      console.log(
+        actions.map(drill => Lib.displayInfo(query, stageIndex, drill)),
+        extraData,
       );
-      if (mlv2Drills && mlv2Drills.length > 0) {
-        //console.log(question, clicked?.column, clicked?.value, mlv2Drills);
-      }
     }
 
-    return mode ? mode.actionsForClick({ ...clicked, extraData }, {}) : [];
+    return {
+      actions,
+      query,
+      question,
+    };
   }
 
   visualizationIsClickable = clicked => {
@@ -263,8 +270,11 @@ class Visualization extends PureComponent {
     if (!onChangeCardAndRun) {
       return false;
     }
+
     try {
-      return this.getClickActions(clicked).length > 0;
+      const { actions } = this.getClickActions(clicked);
+
+      return actions?.length > 0;
     } catch (e) {
       console.warn(e);
       return false;
@@ -289,13 +299,12 @@ class Visualization extends PureComponent {
       return;
     }
 
-    const didPerformDefaultAction = performDefaultAction(
-      this.getClickActions(clicked),
-      {
-        dispatch: this.props.dispatch,
-        onChangeCardAndRun: this.handleOnChangeCardAndRun,
-      },
-    );
+    const { actions } = this.getClickActions(clicked);
+
+    const didPerformDefaultAction = performDefaultAction(actions, {
+      dispatch: this.props.dispatch,
+      onChangeCardAndRun: this.handleOnChangeCardAndRun,
+    });
 
     if (didPerformDefaultAction) {
       return;
@@ -357,10 +366,12 @@ class Visualization extends PureComponent {
     let { series, hovered, clicked } = this.state;
     let { style } = this.props;
 
-    const clickActions = this.getClickActions(clicked);
-    const regularClickActions = clickActions.filter(isRegularClickAction);
+    const { actions: clickActions, question } = this.getClickActions(clicked);
+
+    const regularClickActions = clickActions?.filter(isRegularClickAction);
+
     // disable hover when click action is active
-    if (clickActions.length > 0) {
+    if (clickActions?.length > 0) {
       hovered = null;
     }
 
@@ -536,6 +547,7 @@ class Visualization extends PureComponent {
             <ConnectedChartClickActions
               clicked={clicked}
               clickActions={regularClickActions}
+              question={question}
               onChangeCardAndRun={this.handleOnChangeCardAndRun}
               onClose={this.hideActions}
               series={series}

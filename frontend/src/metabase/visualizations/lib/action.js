@@ -2,6 +2,7 @@ import _ from "underscore";
 import { push } from "react-router-redux";
 import { open } from "metabase/lib/dom";
 import { setParameterValuesFromQueryParams } from "metabase/dashboard/actions";
+import * as Lib from "metabase-lib";
 
 export function performAction(action, { dispatch, onChangeCardAndRun }) {
   let didPerform = false;
@@ -39,6 +40,12 @@ export function performAction(action, { dispatch, onChangeCardAndRun }) {
     }
   }
   return didPerform;
+}
+
+export function performActionLib2(query, drillThru, ...args) {
+  const updatedQuery = Lib.drillThru(query, -1, drillThru, ...args);
+
+  return updatedQuery;
 }
 
 export function performDefaultAction(actions, props) {

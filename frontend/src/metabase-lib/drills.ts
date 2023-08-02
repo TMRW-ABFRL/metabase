@@ -16,8 +16,8 @@ export function availableDrillThrus(
   stageIndex: number,
   column: ColumnMetadata | Record<string, unknown>,
   value: any,
-  row: DataRow | null,
-  dimensions: Dimension[] | null,
+  row?: DataRow | null,
+  dimensions?: Dimension[] | null,
 ): DrillThru[] {
   return ML.available_drill_thrus(
     query,

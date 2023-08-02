@@ -2,10 +2,13 @@ import _ from "underscore";
 import { t } from "ttag";
 import type { RegularClickAction } from "metabase/modes/types";
 import { ClickActionSection } from "metabase/modes/types";
+import * as Lib from "metabase-lib";
 
 type Section = {
-  icon: string;
+  icon?: string;
   index?: number;
+
+  drills?: string[];
 };
 
 export const SECTIONS: Record<ClickActionSection, Section> = {
@@ -17,6 +20,8 @@ export const SECTIONS: Record<ClickActionSection, Section> = {
   },
   sort: {
     icon: "sort",
+
+    drills: ["drill-thru/sort", "formatting"],
   },
   breakout: {
     icon: "breakout",
@@ -55,37 +60,60 @@ Object.values(SECTIONS).map((section, index) => {
   section.index = index;
 });
 
+export const DRILL_BUTTON_TYPE_MAP = {
+  ["drill-thru/sort"]: "sort",
+};
+
 export const getGroupedAndSortedActions = (
-  clickActions: RegularClickAction[],
+  clickActions: Lib.DrillThruDisplayInfo[],
 ) => {
-  const groupedClickActions = _.groupBy(clickActions, "section") as {
-    [key in ClickActionSection]?: RegularClickAction[];
-  };
+  const clickActionsMapByType = _.groupBy(clickActions, "type");
 
-  if (groupedClickActions["sum"]?.length === 1) {
-    // if there's only one "sum" click action, merge it into "summarize" and change its button type and icon
-    if (!groupedClickActions["summarize"]) {
-      groupedClickActions["summarize"] = [];
-    }
-    groupedClickActions["summarize"].push({
-      ...groupedClickActions["sum"][0],
-      buttonType: "horizontal",
-      icon: "number",
-    });
-    delete groupedClickActions["sum"];
-  }
-  if (groupedClickActions["sort"]?.length === 1) {
-    // restyle the Formatting action when there is only one option
-    groupedClickActions["sort"][0] = {
-      ...groupedClickActions["sort"][0],
-      buttonType: "horizontal",
-    };
-  }
+  // const groupedClickActions = _.groupBy(clickActions, "section") as {
+  //   [key in ClickActionSection]?: RegularClickAction[];
+  // };
+  //
+  // if (groupedClickActions["sum"]?.length === 1) {
+  //   // if there's only one "sum" click action, merge it into "summarize" and change its button type and icon
+  //   if (!groupedClickActions["summarize"]) {
+  //     groupedClickActions["summarize"] = [];
+  //   }
+  //   groupedClickActions["summarize"].push({
+  //     ...groupedClickActions["sum"][0],
+  //     buttonType: "horizontal",
+  //     icon: "number",
+  //   });
+  //   delete groupedClickActions["sum"];
+  // }
+  // if (groupedClickActions["sort"]?.length === 1) {
+  //   // restyle the Formatting action when there is only one option
+  //   groupedClickActions["sort"][0] = {
+  //     ...groupedClickActions["sort"][0],
+  //     buttonType: "horizontal",
+  //   };
+  // }
+  //
+  // return _.chain(groupedClickActions)
+  //   .pairs()
+  //   .sortBy(([key]) => (SECTIONS[key] ? SECTIONS[key].index : 99))
+  //   .value();
 
-  return _.chain(groupedClickActions)
-    .pairs()
-    .sortBy(([key]) => (SECTIONS[key] ? SECTIONS[key].index : 99))
-    .value();
+  const data = Object.entries(SECTIONS)
+    .map(([key, sectionConfig]) => {
+      return {
+        key,
+        actions: sectionConfig.drills
+          ?.map(drillKey => clickActionsMapByType[drillKey]?.[0])
+          .filter(Boolean),
+      };
+    })
+    .filter(({ actions }) => actions?.length);
+
+  // console.log(data);
+
+  return data;
+
+  // return _.sortBy(clickActions, ({ type }) => DRILLS_ORDER_MAP[type] || 99);
 };
 
 export const getGALabelForAction = (action: RegularClickAction) =>
@@ -122,11 +150,11 @@ export const getFilterSectionTitle = (actions: RegularClickAction[]) => {
 
 export const getSectionTitle = (
   sectionKey: string,
-  actions: RegularClickAction[],
+  // actions: RegularClickAction[],
 ): string | null => {
   switch (sectionKey) {
-    case "filter":
-      return getFilterSectionTitle(actions);
+    // case "filter":
+    //   return getFilterSectionTitle(actions);
 
     case "sum":
       return t`Summarize`;

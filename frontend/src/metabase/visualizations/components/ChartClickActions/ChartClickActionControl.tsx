@@ -1,7 +1,14 @@
-import { ClickAction, isRegularClickAction } from "metabase/modes/types";
+// import {
+//   ClickAction,
+//   ClickActionButtonType,
+//   isRegularClickAction,
+// } from "metabase/modes/types";
 import Tooltip from "metabase/core/components/Tooltip";
 import { color } from "metabase/lib/colors";
 import { Icon, IconName } from "metabase/core/components/Icon";
+import { SortDrillWidget } from "metabase/visualizations/components/ChartClickActions/SortDrillWidget";
+import * as Lib from "metabase-lib";
+import { ClickObject } from "metabase-lib/queries/drills/types";
 import {
   ClickActionButtonIcon,
   FormattingControl,
@@ -14,21 +21,23 @@ import {
 } from "./ChartClickActionControl.styled";
 
 interface Props {
-  action: ClickAction;
-  onClick: (action: ClickAction) => void;
+  action: Lib.DrillThruDisplayInfo;
+  clicked: ClickObject;
+  onClick: (action: Lib.DrillThruDisplayInfo) => void;
 }
 
 export const ChartClickActionControl = ({
   action,
+  clicked,
   onClick,
 }: Props): JSX.Element | null => {
-  if (!isRegularClickAction(action)) {
-    return null;
-  }
+  // if (!isRegularClickAction(action)) {
+  //   return null;
+  // }
 
-  const { buttonType } = action;
+  const { type } = action;
 
-  switch (buttonType) {
+  switch (type) {
     case "token-filter":
       return (
         <TokenFilterActionButton
@@ -99,6 +108,11 @@ export const ChartClickActionControl = ({
 
     case "info":
       return <InfoControl>{action.title}</InfoControl>;
+
+    case "drill-thru/sort":
+      return (
+        <SortDrillWidget action={action} clicked={clicked} onClick={onClick} />
+      );
   }
 
   return null;

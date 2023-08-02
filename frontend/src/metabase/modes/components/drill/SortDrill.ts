@@ -1,5 +1,6 @@
 import { t } from "ttag";
-import type { ClickActionBase, Drill } from "metabase/modes/types";
+import type { ClickObject, ClickActionBase, Drill } from "metabase/modes/types";
+import * as Lib from "metabase-lib";
 import {
   sortDrill,
   sortDrillQuestion,
@@ -37,3 +38,12 @@ const SortDrill: Drill = ({ question, clicked }) => {
 
 // eslint-disable-next-line import/no-default-export -- deprecated usage
 export default SortDrill;
+
+export const applySortDrill = (
+  query: Lib.Query,
+  drillObject: Lib.DrillThru,
+  direction: "asc" | "desc",
+  clicked?: ClickObject,
+): Lib.Query => {
+  return Lib.drillThru(query, -1, drillObject, clicked?.column, direction);
+};

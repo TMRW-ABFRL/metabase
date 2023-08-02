@@ -1,32 +1,53 @@
-import type { RegularClickAction } from "metabase/modes/types";
+import React from "react";
+import * as Lib from "metabase-lib";
+import { ClickObject } from "metabase-lib/queries/drills/types";
 import { Container, Divider } from "./ChartClickActions.styled";
 import {
   getGroupedAndSortedActions,
-  getSectionContentDirection,
+  // getSectionContentDirection,
   getSectionTitle,
 } from "./utils";
 import { ChartClickActionsSection } from "./ChartClickActionsSection";
 import { ChartClickActionControl } from "./ChartClickActionControl";
 
-interface Props {
-  clickActions: RegularClickAction[];
+const QUERY_STAGE_INDEX = -1;
 
-  onClick: (action: RegularClickAction) => void;
+interface Props {
+  clickActions: Lib.DrillThru[];
+  query: Lib.Query;
+  clicked: ClickObject;
+
+  onClick: (action: Lib.DrillThru) => void;
 }
 
 export const ChartClickActionsView = ({
   clickActions,
+  query,
+  clicked,
+
   onClick,
 }: Props): JSX.Element => {
-  const sections = getGroupedAndSortedActions(clickActions);
+  const [mappedClickActionsMap, mappedClickActions] = React.useMemo(() => {
+    const map = new Map();
 
+    const mappedClickActions = clickActions.map(drill => {
+      const drillDisplayInfo = Lib.displayInfo(query, QUERY_STAGE_INDEX, drill);
+      map.set(drillDisplayInfo, drill);
+
+      return drillDisplayInfo;
+    });
+
+    return [map, mappedClickActions];
+  }, [clickActions, query]);
+
+  const sections = getGroupedAndSortedActions(mappedClickActions);
   const hasOnlyOneSection = sections.length === 1;
 
   return (
     <Container>
-      {sections.map(([key, actions]) => {
-        const sectionTitle = getSectionTitle(key, actions);
-        const contentDirection = getSectionContentDirection(key, actions);
+      {sections.map(({ key, actions }) => {
+        const sectionTitle = getSectionTitle(key /*, actions*/);
+        // const contentDirection = getSectionContentDirection(key, actions);
         const withBottomDivider = key === "records" && !hasOnlyOneSection;
         const withTopDivider = key === "details" && !hasOnlyOneSection;
 
@@ -35,14 +56,19 @@ export const ChartClickActionsView = ({
             key={key}
             type={key}
             title={sectionTitle}
-            contentDirection={contentDirection}
+            contentDirection={"column"}
           >
             {withTopDivider && <Divider />}
-            {actions.map((action, index) => (
+            {actions?.map((action, index) => (
               <ChartClickActionControl
-                key={action.name}
+                key={action?.type}
                 action={action}
-                onClick={() => onClick(action)}
+                clicked={clicked}
+                onClick={(action, ...args) => {
+                  const initialAction = mappedClickActionsMap.get(action);
+
+                  onClick(initialAction, ...args);
+                }}
               />
             ))}
             {withBottomDivider && <Divider />}
