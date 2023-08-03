@@ -24,7 +24,7 @@
 (mu/defn fallback-display-name :- ::lib.schema.common/non-blank-string
   "If for some reason the metadata is unavailable. This is better than returning nothing I guess."
   [card-id :- ::lib.schema.id/card]
-  (i18n/tru "Saved Question {0}" (pr-str card-id)))
+  (i18n/tru "Question {0}" (pr-str card-id)))
 
 (defmethod lib.metadata.calculation/describe-top-level-key-method :source-card
   [query stage-number _k]
