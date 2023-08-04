@@ -105,30 +105,35 @@ export default class Filter extends MBQLClause {
     const op = this.operatorName();
     const dim = this.dimension();
 
-    if (["minute", "hour"].includes(unit)) {
+    if (unit === "minute") {
+      // DatePicker supports displaying minutes directly.
       return this.set([
         op,
         dim.withTemporalUnit(unit).mbql(),
         ...dates.map(d => d.format(DATE_TIME_FORMAT)),
       ]);
     } else if (unit === "day") {
+      // DatePicker supports displaying days directly.
       return this.set([
         op,
         dim.withTemporalUnit(unit).mbql(),
         ...dates.map(d => d.format(DATE_FORMAT)),
       ]);
-    } else if (["week", "month", "quarter", "year"].includes(unit)) {
-      const dayOp = op === "=" ? "between" : op; // e.g. equal-week/month/quarter/year is always between-days
+    } else if (["hour", "week", "month", "quarter", "year"].includes(unit)) {
+      // DatePicker does not support these units, so convert them to minutes or days.
+      const newOp = op === "=" ? "between" : op;
+      const newUnit = unit === "hour" ? "minute" : "day";
+      const newFormat = unit === "hour" ? DATE_TIME_FORMAT : DATE_FORMAT;
       const [start, end] = normalizeDateTimeRangeWithUnit(dates, unit);
-      const days = {
+      const newDates = {
         between: [start, end],
         "<": [start],
         ">": [end],
-      }[dayOp];
+      }[newOp];
       return this.set([
-        dayOp,
-        dim.withTemporalUnit("day").mbql(),
-        ...days.map(d => d.format(DATE_FORMAT)),
+        newOp,
+        dim.withTemporalUnit(newUnit).mbql(),
+        ...newDates.map(d => d.format(newFormat)),
       ]);
     }
     return this;
