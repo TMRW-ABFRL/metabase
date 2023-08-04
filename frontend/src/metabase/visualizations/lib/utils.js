@@ -271,6 +271,10 @@ export function getDefaultDimensionAndMetric(series) {
   };
 }
 
+function isBreakoutDimensionCardinalitySensible(cardinality) {
+  return cardinality > 1 && cardinality < MAX_SERIES;
+}
+
 export function getDefaultDimensionsAndMetrics(
   [{ data }],
   maxDimensions = 2,
@@ -323,7 +327,9 @@ export function getDefaultDimensionsAndMetrics(
 
   if (
     dimensions.length > 1 &&
-    getColumnCardinality(cols, rows, cols.indexOf(dimensions[1])) > MAX_SERIES
+    !isBreakoutDimensionCardinalitySensible(
+      getColumnCardinality(cols, rows, cols.indexOf(dimensions[1])),
+    )
   ) {
     dimensions.pop();
   }

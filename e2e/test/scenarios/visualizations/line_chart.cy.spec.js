@@ -6,6 +6,7 @@ import {
   openSeriesSettings,
   queryBuilderMain,
   addOrUpdateDashboardCard,
+  sidebar,
 } from "e2e/support/helpers";
 
 import { SAMPLE_DB_ID } from "e2e/support/cypress_data";
@@ -181,6 +182,32 @@ describe("scenarios > visualizations > line chart", () => {
       .should("contain", "cat1 new")
       .and("contain", "cat2")
       .and("contain", "cat3");
+  });
+
+  it("should not auto select a breakout column when its cardinality is 1 (metabase#32107)", () => {
+    visitQuestionAdhoc({
+      dataset_query: {
+        type: "native",
+        native: {
+          query:
+            "select 'a' x, null x1, 1 y\n" +
+            "union all select 'b', null, 2\n" +
+            "union all select 'c', null, 3",
+          "template-tags": {},
+        },
+        database: SAMPLE_DB_ID,
+      },
+      display: "line",
+      visualization_settings: {},
+    });
+
+    cy.findByTestId("viz-settings-button").click();
+
+    // No breakout is selected
+    sidebar().findByText("Add series breakout");
+
+    // No legend items
+    cy.findByTestId("legend-item").should("not.exist");
   });
 
   it("should interpolate null value by not rendering a data point (metabase#4122)", () => {
