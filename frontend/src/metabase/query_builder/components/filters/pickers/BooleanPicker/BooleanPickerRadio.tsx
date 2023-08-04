@@ -1,5 +1,9 @@
 import _ from "underscore";
+import { useContext, useMemo } from "react";
 
+import * as ML from "metabase-lib";
+
+import { FilterContext } from "metabase/common/context";
 import { useToggle } from "metabase/hooks/use-toggle";
 import Filter from "metabase-lib/queries/structured/Filter";
 
@@ -8,26 +12,45 @@ import { RadioContainer, Toggle, FilterRadio } from "./BooleanPicker.styled";
 import { OPTIONS, EXPANDED_OPTIONS } from "./constants";
 import { getValue } from "./utils";
 
+
 interface BooleanPickerProps {
-  filter: Filter;
   onFilterChange: (filter: Filter) => void;
   className?: string;
 }
 
 function BooleanPicker({
   className,
-  filter,
   onFilterChange,
 }: BooleanPickerProps) {
-  const value = getValue(filter);
+  const { filter, query, legacyQuery, column, stageIndex } = useContext(FilterContext);
+
+  const { args } = ML.externalOp(filter);
+  const value = args[1];
+
   const [isExpanded, { toggle }] = useToggle(!_.isBoolean(value));
 
+  const operatorsMap = useMemo(() => {
+    const operators = ML.filterableColumnOperators(column);
+
+    return Object.fromEntries(
+      operators.map((operator: ML.FilterOperator) => [
+        ML.displayInfo(query, stageIndex, operator).shortName,
+        operator,
+      ]),
+    );
+  }, [column, query]);
+
   const updateFilter = (value: unknown) => {
-    if (_.isBoolean(value)) {
-      onFilterChange(filter.setOperator("=").setArguments([value]));
-    } else if (typeof value === "string") {
-      onFilterChange(filter.setOperator(value));
-    }
+    const operator = _.isBoolean(value)
+      ? operatorsMap["="]
+      : operatorsMap[value];
+    const filterValue = _.isBoolean(value) ? value : undefined;
+
+    const newFilterClause = ML.filterClause(operator, column, filterValue);
+
+    console.log('updateFilter', ML.toLegacyFilter(query, legacyQuery, newFilterClause))
+
+    onFilterChange(ML.toLegacyFilter(query, legacyQuery, newFilterClause));
   };
 
   return (

@@ -1,5 +1,8 @@
 import * as ML from "cljs/metabase.lib.js";
 
+import Filter from "metabase-lib/queries/structured/Filter";
+import StructuredQuery from "metabase-lib/queries/StructuredQuery";
+
 import type {
   ColumnMetadata,
   ColumnWithOperators,
@@ -49,4 +52,24 @@ export function filterOperator(
   filterClause: FilterClause,
 ) {
   return ML.filter_operator(query, stageIndex, filterClause);
+}
+
+// this probably doesn't go here
+export function toLegacyFilter(
+  query: Query,
+  legacyQuery: StructuredQuery,
+  filterClause: FilterClause,
+): Filter {
+  const filter = ML.external_op(filterClause);
+  const field = ML.external_op(filter.args[0]);
+  const newQuery = ML.filter(query, -1, filterClause);
+
+  const legacyDatasetQuery = ML.legacy_query(newQuery);
+  const legacyStructuredQuery = legacyQuery.setDatasetQuery(legacyDatasetQuery);
+
+  return new Filter([
+    filter.operator,
+    [field.operator, ...field.args, null],
+    ...filter.args.slice(1),
+  ], null, legacyStructuredQuery);
 }

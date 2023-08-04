@@ -4,6 +4,9 @@ import { t } from "ttag";
 
 import { usePrevious } from "react-use";
 
+import * as ML from "metabase-lib";
+import { FilterContext } from "metabase/common/context";
+
 import { color } from "metabase/lib/colors";
 
 import { Icon } from "metabase/core/components/Icon";
@@ -40,6 +43,7 @@ type Props = {
   style?: React.CSSProperties;
   fieldPickerTitle?: string;
   filter?: Filter;
+  filterIndex: number,
   query: StructuredQuery;
   onChange?: (filter: Filter) => void;
   onChangeFilter: (filter: Filter) => void;
@@ -59,6 +63,7 @@ type Props = {
 export function FilterPopover({
   isNew: isNewProp,
   filter: filterProp,
+  filterIndex,
   style = {},
   showFieldPicker = true,
   showCustom = true,
@@ -244,81 +249,102 @@ export function FilterPopover({
   const filterOperator = filter.operator();
   const hasPicker = filterOperator && filterOperator.fields.length > 0;
 
+
+  const stageIndex = -1; // is this right?
+  const mlv2Query = query.question()._getMLv2Query();
+  const columns = ML.filterableColumns(mlv2Query, stageIndex);
+  const mlv2Filter = ML.filters(mlv2Query, stageIndex)[filterIndex];
+
+  // HACK, we can't actually rely on matching field names
+  const column = columns.find(column => {
+    return ML.displayInfo(mlv2Query, stageIndex, column).name === field.name
+  })
+
   return (
     <div className={className} style={{ minWidth: MIN_WIDTH, ...style }}>
-      {shouldShowDatePicker ? (
-        <DatePicker
-          className={className}
-          filter={filter}
-          dateShortcutOptions={dateShortcutOptions}
-          primaryColor={primaryColor}
-          minWidth={MIN_WIDTH}
-          maxWidth={MAX_WIDTH}
-          onBack={onBack}
-          onCommit={handleCommit}
-          onFilterChange={handleFilterChange}
-          disableChangingDimension={!showFieldPicker}
-          supportsExpressions={supportsExpressions}
-        >
-          <Button
-            data-ui-tag="add-filter"
-            primaryColor={primaryColor}
-            disabled={!filter.isValid()}
-            className="ml-auto"
-            onClick={() => handleCommit()}
-          >
-            {isNew ? t`Add filter` : t`Update filter`}
-          </Button>
-        </DatePicker>
-      ) : (
-        <div>
-          {field?.isTime() ? (
-            <TimePicker
-              className={className}
-              filter={filter}
-              primaryColor={primaryColor}
-              minWidth={MIN_WIDTH}
-              maxWidth={MAX_WIDTH}
-              onBack={onBack}
-              onCommit={handleCommit}
-              onFilterChange={handleFilterChange}
-            />
-          ) : (
-            <>
-              <FilterPopoverHeader
-                filter={filter}
-                onFilterChange={handleFilterChange}
-                onBack={onBack}
-                showFieldPicker={showFieldPicker}
-                forceShowOperatorSelector={showOperatorSelector}
-              />
-              {hasPicker ? (
-                <>
-                  <FilterPopoverSeparator data-testid="filter-popover-separator" />
-                  <FilterPopoverPicker
-                    className="px1 pt1 pb1"
-                    filter={filter}
-                    onFilterChange={handleFilterChange}
-                    onCommit={handleCommit}
-                    maxWidth={MAX_WIDTH}
-                    primaryColor={primaryColor}
-                    checkedColor={checkedColor}
-                  />
-                </>
-              ) : (
-                <EmptyFilterPickerPlaceholder data-testid="empty-picker-placeholder" />
-              )}
-            </>
-          )}
-          <FilterPopoverFooter
-            className="px1 pb1"
+      <FilterContext.Provider
+        value={{
+          filter: mlv2Filter,
+          query: mlv2Query,
+          legacyQuery: query,
+          column: column,
+          stageIndex,
+        }}
+      >
+        {shouldShowDatePicker ? (
+          <DatePicker
+            className={className}
             filter={filter}
+            dateShortcutOptions={dateShortcutOptions}
+            primaryColor={primaryColor}
+            minWidth={MIN_WIDTH}
+            maxWidth={MAX_WIDTH}
+            onBack={onBack}
+            onCommit={handleCommit}
             onFilterChange={handleFilterChange}
-            onCommit={!noCommitButton ? handleCommit : null}
-            isNew={!!isNew}
-          />
+            disableChangingDimension={!showFieldPicker}
+            supportsExpressions={supportsExpressions}
+          >
+            <Button
+              data-ui-tag="add-filter"
+              primaryColor={primaryColor}
+              disabled={!filter.isValid()}
+              className="ml-auto"
+              onClick={() => handleCommit()}
+            >
+              {isNew ? t`Add filter` : t`Update filter`}
+            </Button>
+          </DatePicker>
+        ) : (
+          <div>
+            {field?.isTime() ? (
+              <TimePicker
+                className={className}
+                filter={filter}
+                primaryColor={primaryColor}
+                minWidth={MIN_WIDTH}
+                maxWidth={MAX_WIDTH}
+                onBack={onBack}
+                onCommit={handleCommit}
+                onFilterChange={handleFilterChange}
+              />
+            ) : (
+              <>
+                <FilterPopoverHeader
+                  filter={filter}
+                  onFilterChange={handleFilterChange}
+                  onBack={onBack}
+                  showFieldPicker={showFieldPicker}
+                  forceShowOperatorSelector={showOperatorSelector}
+                />
+                {hasPicker ? (
+                  <>
+                    <FilterPopoverSeparator data-testid="filter-popover-separator" />
+                    <FilterPopoverPicker
+                      className="px1 pt1 pb1"
+                      filter={filter}
+                      onFilterChange={handleFilterChange}
+                      onCommit={handleCommit}
+                      maxWidth={MAX_WIDTH}
+                      primaryColor={primaryColor}
+                      checkedColor={checkedColor}
+                    />
+                  </>
+                ) : (
+                  <EmptyFilterPickerPlaceholder data-testid="empty-picker-placeholder" />
+                )}
+              </>
+            )}
+            <FilterPopoverFooter
+              className="px1 pb1"
+              filter={filter}
+              onFilterChange={handleFilterChange}
+              onCommit={!noCommitButton ? handleCommit : null}
+              isNew={!!isNew}
+            />
         </div>
       )}
+      </FilterContext.Provider>
     </div>
   );
 }
