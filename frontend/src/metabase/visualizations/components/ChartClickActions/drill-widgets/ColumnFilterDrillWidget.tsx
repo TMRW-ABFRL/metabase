@@ -11,7 +11,7 @@ import StructuredQuery from "metabase-lib/queries/StructuredQuery";
 import {
   ClickActionButtonIcon,
   HorizontalClickActionButton,
-} from "../ChartClickActionControl.styled";
+} from "../components/ChartClickActionControl.styled";
 
 interface Props {
   action: Lib.ColumnFilterDrillThruInfo;

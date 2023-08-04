@@ -3,7 +3,7 @@ import { Icon, IconName } from "metabase/core/components/Icon";
 import Tooltip from "metabase/core/components/Tooltip";
 import * as Lib from "metabase-lib";
 import { ClickObject } from "metabase-lib/queries/drills/types";
-import { SortControl } from "../ChartClickActionControl.styled";
+import { SortControl } from "../components/ChartClickActionControl.styled";
 
 const SORT_ACTIONS = {
   asc: {

@@ -3,8 +3,8 @@ import {
   Section,
   SectionTitle,
   SectionWithTitle,
-} from "metabase/visualizations/components/ChartClickActions/ChartClickActionsSection.styled";
-import { ContentDirectionType } from "./utils";
+} from "metabase/visualizations/components/ChartClickActions/components/ChartClickActionsSection.styled";
+import { ContentDirectionType } from "../utils";
 
 interface Props {
   type: string;

@@ -12,7 +12,7 @@ import { Icon } from "metabase/core/components/Icon";
 import { getColumnKey } from "metabase-lib/queries/utils/get-column-key";
 import Question from "metabase-lib/Question";
 import { ClickObject } from "metabase-lib/queries/drills/types";
-import { FormattingControl } from "../ChartClickActionControl.styled";
+import { FormattingControl } from "../components/ChartClickActionControl.styled";
 
 interface Props {
   clicked: ClickObject;

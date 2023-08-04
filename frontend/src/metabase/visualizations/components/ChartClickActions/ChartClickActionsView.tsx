@@ -1,16 +1,14 @@
 import React from "react";
-import { t } from "ttag";
 import * as Lib from "metabase-lib";
 import { ClickActionPopoverProps } from "metabase/modes/types";
 import { VisualizationSettings } from "metabase-types/api";
-import { color } from "metabase/lib/colors";
+import { ColumnValuesDistributionDrillWidget } from "metabase/visualizations/components/ChartClickActions/drill-widgets/ColumnValuesDistributionDrillWidget";
+import { SummarizeColumnDrillWidget } from "metabase/visualizations/components/ChartClickActions/drill-widgets/SummarizeColumnDrillWidget";
+import { SummarizeColumnByTimeDrillWidget } from "metabase/visualizations/components/ChartClickActions/drill-widgets/SummarizeColumnByTimeDrillWidget";
+import { QuickFilterDrillWidget } from "metabase/visualizations/components/ChartClickActions/drill-widgets/QuickFilterDrillWidget";
 import { ClickObject } from "metabase-lib/queries/drills/types";
 import Question from "metabase-lib/Question";
 import { ModeType } from "metabase-lib/Mode/types";
-import {
-  ClickActionButtonIcon,
-  HorizontalClickActionButton,
-} from "./ChartClickActionControl.styled";
 import { ColumnFilterDrillWidget } from "./drill-widgets/ColumnFilterDrillWidget";
 import { SortDrillWidget } from "./drill-widgets/SortDrillWidget";
 import {
@@ -18,13 +16,8 @@ import {
   shouldDisplayFormatWidget,
 } from "./drill-widgets/ColumnFormattingWidget";
 import { Container /*, Divider*/ } from "./ChartClickActions.styled";
-import {
-  ExtraPopoverProps,
-  // getGroupedAndSortedActions,
-  // getSectionContentDirection,
-  // getSectionTitle,
-} from "./utils";
-import { ChartClickActionsSection } from "./ChartClickActionsSection";
+import { ExtraPopoverProps } from "./utils";
+import { ChartClickActionsSection } from "./components/ChartClickActionsSection";
 
 const QUERY_STAGE_INDEX = -1;
 
@@ -81,22 +74,29 @@ export const ChartClickActionsView = ({
   // const hasOnlyOneSection = sections.length === 1;
 
   const displayFormatWidget = shouldDisplayFormatWidget(clicked, question);
-  const sortAction = typeToDisplayMap.get("drill-thru/sort");
-  const columnFilterAction = typeToDisplayMap.get("drill-thru/column-filter");
-  const columnDistributionDrill = typeToDisplayMap.get(
+  const sortDrill = typeToDisplayMap.get("drill-thru/sort");
+  const columnFilterDrill = typeToDisplayMap.get("drill-thru/column-filter");
+  const columnValuesDistributionDrill = typeToDisplayMap.get(
     "drill-thru/distribution",
   );
+  const summarizeColumnByTimeDrill = typeToDisplayMap.get(
+    "drill-thru/summarize-column-by-time",
+  );
+  const summarizeColumnDrill = typeToDisplayMap.get(
+    "drill-thru/summarize-column",
+  );
+  const quickFilterDrill = typeToDisplayMap.get("drill-thru/quick-filter");
 
   return (
     <Container>
-      {(displayFormatWidget || sortAction) && (
+      {(displayFormatWidget || sortDrill) && (
         <ChartClickActionsSection
           type="sort"
-          contentDirection={sortAction ? "row" : "column"}
+          contentDirection={sortDrill ? "row" : "column"}
         >
-          {sortAction && (
+          {sortDrill && (
             <SortDrillWidget
-              action={sortAction}
+              action={sortDrill}
               clicked={clicked}
               onApplyDrill={handleApplyDrill}
             />
@@ -112,9 +112,9 @@ export const ChartClickActionsView = ({
         </ChartClickActionsSection>
       )}
 
-      {columnFilterAction && (
+      {columnFilterDrill && (
         <ColumnFilterDrillWidget
-          action={columnFilterAction}
+          action={columnFilterDrill}
           clicked={clicked}
           query={query}
           question={question}
@@ -123,13 +123,33 @@ export const ChartClickActionsView = ({
         />
       )}
 
-      {columnDistributionDrill && (
-        <HorizontalClickActionButton
-          small
-          icon={<ClickActionButtonIcon name="bar" />}
-          iconColor={color("brand")}
-          onClick={() => handleApplyDrill(columnDistributionDrill)}
-        >{t`Distribution`}</HorizontalClickActionButton>
+      {summarizeColumnByTimeDrill && (
+        <SummarizeColumnByTimeDrillWidget
+          action={summarizeColumnByTimeDrill}
+          onApplyDrill={handleApplyDrill}
+        />
+      )}
+
+      {columnValuesDistributionDrill && (
+        <ColumnValuesDistributionDrillWidget
+          action={columnValuesDistributionDrill}
+          onApplyDrill={handleApplyDrill}
+        />
+      )}
+
+      {summarizeColumnDrill && (
+        <SummarizeColumnDrillWidget
+          action={summarizeColumnDrill}
+          onApplyDrill={handleApplyDrill}
+        />
+      )}
+
+      {quickFilterDrill && (
+        <QuickFilterDrillWidget
+          action={quickFilterDrill}
+          clicked={clicked}
+          onApplyDrill={handleApplyDrill}
+        />
       )}
 
       {/*{sections.map(({ key, actions, additionalWidgets }) => {
