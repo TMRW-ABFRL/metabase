@@ -152,9 +152,10 @@ describe("Filter", () => {
           .toDatePickerFilter()
           .raw(),
       ).toEqual([
-        "=",
-        ["field", ORDERS.CREATED_AT, dateType("hour")],
+        "between",
+        ["field", ORDERS.CREATED_AT, dateType("minute")],
         "2024-02-16T10:00:00",
+        "2024-02-16T10:59:59",
       ]);
     });
     it("should convert minute filter args to YYYY-MM-DDTHH:mm:ss (for SpecificDatePicker)", () => {
