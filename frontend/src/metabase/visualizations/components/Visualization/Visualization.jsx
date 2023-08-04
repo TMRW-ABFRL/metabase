@@ -229,14 +229,14 @@ class Visualization extends PureComponent {
     if (!clicked) {
       return [];
     }
-    const { metadata, getExtraDataForClick = () => ({}) } = this.props;
+    const { metadata /*, getExtraDataForClick = () => ({}) */ } = this.props;
 
     const seriesIndex = clicked.seriesIndex || 0;
     const card = this.state.series[seriesIndex].card;
     const question = this._getQuestionForCardCached(metadata, card);
 
     // TODO: find a way to add "extraData" to drills
-    const extraData = getExtraDataForClick(clicked);
+    // const extraData = getExtraDataForClick(clicked);
 
     const query = question._getMLv2Query();
     const stageIndex = -1;
@@ -252,10 +252,7 @@ class Visualization extends PureComponent {
     // TODO: remove this after debugging
     if (actions && actions.length > 0) {
       // eslint-disable-next-line no-console
-      console.log(
-        actions.map(drill => Lib.displayInfo(query, stageIndex, drill)),
-        extraData,
-      );
+      console.log("ClickActions", actions);
     }
 
     return {

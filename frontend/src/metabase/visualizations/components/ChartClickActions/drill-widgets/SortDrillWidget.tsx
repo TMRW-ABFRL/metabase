@@ -3,7 +3,7 @@ import { Icon, IconName } from "metabase/core/components/Icon";
 import Tooltip from "metabase/core/components/Tooltip";
 import * as Lib from "metabase-lib";
 import { ClickObject } from "metabase-lib/queries/drills/types";
-import { SortControl } from "./ChartClickActionControl.styled";
+import { SortControl } from "../ChartClickActionControl.styled";
 
 const SORT_ACTIONS = {
   asc: {
@@ -21,7 +21,7 @@ const SORT_ACTIONS = {
 interface Props {
   action: Lib.SortDrillThruInfo;
   clicked: ClickObject;
-  onClick: (
+  onApplyDrill: (
     action: Lib.DrillThruDisplayInfo,
     direction: "asc" | "desc",
   ) => void;
@@ -29,8 +29,7 @@ interface Props {
 
 export const SortDrillWidget = ({
   action,
-  clicked,
-  onClick,
+  onApplyDrill,
 }: Props): JSX.Element => {
   const { directions } = action;
 
@@ -41,7 +40,10 @@ export const SortDrillWidget = ({
 
         return (
           <Tooltip key={direction} tooltip={config.tooltip}>
-            <SortControl onlyIcon onClick={() => onClick(action, direction)}>
+            <SortControl
+              onlyIcon
+              onClick={() => onApplyDrill(action, direction)}
+            >
               <Icon size={12} name={config.icon} />
             </SortControl>
           </Tooltip>

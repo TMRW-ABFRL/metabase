@@ -1,6 +1,7 @@
 import type React from "react";
 import type { Dispatch, GetState } from "metabase-types/store";
-import type { Series, VisualizationSettings } from "metabase-types/api";
+import type { Series } from "metabase-types/api";
+import * as Lib from "metabase-lib";
 import type Question from "metabase-lib/Question";
 import type {
   ClickActionProps,
@@ -91,9 +92,8 @@ export type Drill = (options: ClickActionProps) => ClickAction[];
 
 export type ClickActionPopoverProps = {
   series: Series;
-  onClick: (action: RegularClickAction) => void;
+  onApplyDrill: (action: Lib.DrillThru, ...args: any[]) => void; // TODO: add proper typings for every drill
   onChangeCardAndRun: OnChangeCardAndRun;
-  onChange: (settings: VisualizationSettings) => void;
   onResize: (...args: unknown[]) => void;
   onClose: () => void;
 };
