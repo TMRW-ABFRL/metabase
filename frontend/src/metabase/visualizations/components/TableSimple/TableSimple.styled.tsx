@@ -3,7 +3,7 @@ import { css } from "@emotion/react";
 
 import Icon from "metabase/components/Icon";
 
-import { alpha, color } from "metabase/lib/colors";
+import { color } from "metabase/lib/colors";
 
 export const Root = styled.div`
   display: flex;
@@ -25,6 +25,7 @@ export const TableContainer = styled.div`
 
   overflow-x: auto;
   overflow-y: hidden;
+  border-top: 1px solid ${color("table-border")};
 `;
 
 const standardTableStyleReset = css`
@@ -42,14 +43,15 @@ export const Table = styled.table`
   ${standardTableStyleReset}
 
   tr {
-    border-bottom: 1px solid ${alpha(color("border"), 0.3)};
+    border-bottom: 1px solid ${color("table-border")};
   }
 
   th,
   td {
     height: 2.1875rem;
     padding: 0 0.75rem;
-    border-bottom: 1px solid ${alpha(color("border"), 0.3)};
+    border-bottom: 1px solid ${color("table-border")};
+    border-right: 1px solid ${color("table-border")};
   }
 
   th:first-of-type,

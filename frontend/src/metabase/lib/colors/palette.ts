@@ -39,6 +39,7 @@ export const colors = {
   "bg-error": "#ED6E6E55",
   shadow: "rgba(0,0,0,0.08)",
   border: "#EEECEC",
+  "table-border": "#D3D3D3",
 
   /* Saturated colors for the SQL editor. Shouldn't be used elsewhere since they're not white-labelable. */
   "saturated-blue": "#2D86D4",
