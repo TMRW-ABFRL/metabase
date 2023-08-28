@@ -41,6 +41,7 @@ const DEFAULT_ORDER = [
   "map",
   "scatter",
   "waterfall",
+  "image_grid",
 ];
 
 interface ChartTypeSidebarProps {

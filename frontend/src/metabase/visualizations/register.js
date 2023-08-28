@@ -9,6 +9,7 @@ import { Scalar } from "./visualizations/Scalar";
 import { SmartScalar } from "./visualizations/SmartScalar";
 import Progress from "./visualizations/Progress";
 import Table from "./visualizations/Table";
+import ImageGrid from "./visualizations//ImageGrid/ImageGrid";
 import { Text } from "./visualizations/Text";
 import { LinkViz } from "./visualizations/LinkViz";
 import LineChart from "./visualizations/LineChart";
@@ -48,5 +49,6 @@ export default function () {
   registerVisualization(PivotTable);
   registerVisualization(ActionViz);
   registerVisualization(Heading);
+  registerVisualization(ImageGrid);
   setDefaultVisualization(Table);
 }
