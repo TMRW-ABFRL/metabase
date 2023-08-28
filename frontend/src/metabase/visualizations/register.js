@@ -11,6 +11,7 @@ import Progress from "./visualizations/Progress";
 import Table from "./visualizations/Table";
 import Text from "./visualizations/Text";
 import LinkViz from "./visualizations/LinkViz";
+import ImageGrid from "./visualizations//ImageGrid/ImageGrid";
 import LineChart from "./visualizations/LineChart";
 import BarChart from "./visualizations/BarChart";
 import WaterfallChart from "./visualizations/WaterfallChart";
@@ -46,5 +47,6 @@ export default function () {
   registerVisualization(ObjectDetail);
   registerVisualization(PivotTable);
   registerVisualization(ActionViz);
+  registerVisualization(ImageGrid);
   setDefaultVisualization(Table);
 }
