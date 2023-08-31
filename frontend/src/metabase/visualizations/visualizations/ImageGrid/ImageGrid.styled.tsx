@@ -9,7 +9,7 @@ export const ImageGridRoot = styled.div`
 export const EditColumnsContainer = styled.div`
   width: 100%;
   position: relative;
-  padding-left: 2%;
+  padding-left: 0.5rem;
   padding-right: 2%;
   display: flex;
   justify-content: flex-start;
