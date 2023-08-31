@@ -20,7 +20,7 @@ import {
   FooterContainer,
 } from "./ImageGrid.styled";
 
-const MIN_CARD_HEIGHT = 2.25;
+const MIN_CARD_HEIGHT = 2.45;
 const ROW_HEIGHT = 0.15;
 const INITIAL_NO_OF_COLUMNS = 4;
 const NO_OF_ROWS = 20;
@@ -79,34 +79,18 @@ const ImageGridComponent = props => {
     }));
   }, []);
 
-  const recomputeColumnCount = useCallback(() => {
-    if (containerRef && containerRef.current) {
-      const { current } = containerRef;
-      const boundingRect = current.getBoundingClientRect();
-      const { width } = boundingRect;
-      const updatedNoOfColumns = Math.floor(width / 320);
-      if (width !== containerWidth) {
-        setContainerWidth(width);
-        setColumnCount(updatedNoOfColumns);
-        setGridLayout(
-          generateLayout(gridData.length, updatedNoOfColumns, cardHeight),
-        );
-      }
-    }
-  }, [containerWidth, gridData, cardHeight, generateLayout]);
+  const recomputeColumnCount = useCallback(currentWidth => {
+    const updatedNoOfColumns = Math.floor(currentWidth / 320);
+    setColumnCount(updatedNoOfColumns);
+  }, []);
 
-  const recomputeCardHeight = useCallback(() => {
+  const recomputeCardHeight = useCallback(columnState => {
     const updatedCardHeight =
       MIN_CARD_HEIGHT +
       Object.values(columnState).filter(value => value).length * ROW_HEIGHT;
 
-    if (updatedCardHeight !== cardHeight) {
-      setCardHeight(updatedCardHeight);
-      setGridLayout(
-        generateLayout(gridData.length, columnCount, updatedCardHeight),
-      );
-    }
-  }, [columnState, cardHeight, gridData, columnCount, generateLayout]);
+    setCardHeight(updatedCardHeight);
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -114,7 +98,10 @@ const ImageGridComponent = props => {
     const handleResize = entries => {
       for (const entry of entries) {
         if (entry.target === container) {
-          recomputeColumnCount();
+          const { current } = containerRef;
+          const boundingRect = current.getBoundingClientRect();
+          const { width } = boundingRect;
+          setContainerWidth(width);
         }
       }
     };
@@ -125,16 +112,19 @@ const ImageGridComponent = props => {
     return () => {
       resizeObserver.unobserve(container);
     };
-  }, [recomputeColumnCount]);
+  }, []);
 
   useEffect(() => {
-    recomputeCardHeight();
+    recomputeColumnCount(containerWidth);
+  }, [containerWidth, recomputeColumnCount]);
+
+  useEffect(() => {
+    recomputeCardHeight(columnState);
   }, [columnState, recomputeCardHeight]);
 
   useEffect(() => {
-    recomputeColumnCount();
-    recomputeCardHeight();
-  }, [gridData, recomputeCardHeight, recomputeColumnCount]);
+    setGridLayout(generateLayout(gridData.length, columnCount, cardHeight));
+  }, [columnCount, cardHeight, gridData, generateLayout]);
 
   const gridStyle = useMemo(
     () => ({

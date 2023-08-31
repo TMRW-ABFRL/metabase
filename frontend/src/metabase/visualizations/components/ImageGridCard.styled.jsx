@@ -2,6 +2,7 @@ import styled from "@emotion/styled";
 
 export const ImageGridCardRoot = styled.div`
   width: 100%;
+  height: 97.5%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -29,6 +30,7 @@ export const TitleText = styled.h3`
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
+  margin-top: 10px;
   margin-bottom: 10px; // Some space after the title
   text-align: center;
 `;
