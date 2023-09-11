@@ -143,6 +143,15 @@ export default class Table extends Component {
       readDependencies: ["table.pivot", "table.pivot_column"],
       persistDefault: true,
     },
+    "table.sticky_columns": {
+      section: t`Columns`,
+      title: t`Stick column to left`,
+      widget: "input",
+      getDefault: () => {
+        return 0;
+      },
+      persistDefault: true,
+    },
     ...tableColumnSettings,
     "table.column_widths": {},
     [DataGrid.COLUMN_FORMATTING_SETTING]: {
@@ -371,6 +380,7 @@ export default class Table extends Component {
 
   render() {
     const { series, isDashboard, settings } = this.props;
+    console.log("SETTINGS", settings);
     const { data } = this.state;
     const [{ card }] = series;
     const sort = getIn(card, ["dataset_query", "query", "order-by"]) || null;

@@ -5,6 +5,8 @@ import React, {
   useMemo,
   useState,
   useRef,
+  useEffect,
+  createRef,
 } from "react";
 import { getIn } from "icepick";
 import _ from "underscore";
@@ -58,14 +60,18 @@ function TableSimple({
   getColumnTitle,
   getExtraDataForClick,
 }) {
+  const { rows, cols } = data;
+
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(1);
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
+  const [stickyColumnOffsets, setStickyColumnOffsets] = useState([]);
 
   const headerRef = useRef(null);
   const footerRef = useRef(null);
   const firstRowRef = useRef(null);
+  const columnRefs = cols.map(() => createRef());
 
   useLayoutEffect(() => {
     const { height: headerHeight } = getBoundingClientRectSafe(headerRef);
@@ -102,9 +108,9 @@ function TableSimple({
     [onVisualizationClick, visualizationIsClickable],
   );
 
-  const { rows, cols } = data;
   const limit = getIn(card, ["dataset_query", "query", "limit"]) || undefined;
   const getCellBackgroundColor = settings["table._cell_background_getter"];
+  const stickyColumnsCount = parseInt(settings["table.sticky_columns"] || 0);
 
   const start = pageSize * page;
   const end = Math.min(rows.length - 1, pageSize * (page + 1) - 1);
@@ -140,12 +146,53 @@ function TableSimple({
     [rowIndexes, start, end],
   );
 
+  useEffect(() => {
+    const tableHeaders = columnRefs.map(ref => ref.current);
+
+    const handleResize = entries => {
+      for (const entry of entries) {
+        if (entry.target === tableHeaders[0]) {
+          let initialOffset = 0;
+          const updatedOffsets = tableHeaders.map(header => {
+            const boundingRect = header.getBoundingClientRect();
+            const { width } = boundingRect;
+            const currentOffset = initialOffset;
+            initialOffset += width;
+            return currentOffset;
+          });
+          setStickyColumnOffsets(updatedOffsets);
+        }
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(tableHeaders[0]);
+
+    return () => {
+      resizeObserver.unobserve(tableHeaders[0]);
+    };
+  }, [columnRefs]);
+
   const renderColumnHeader = useCallback(
     (col, colIndex) => {
       const iconName = sortDirection === "desc" ? "chevrondown" : "chevronup";
       const onClick = () => setSort(colIndex);
       return (
-        <th key={colIndex} data-testid="column-header">
+        <th
+          key={colIndex}
+          data-testid="column-header"
+          style={
+            colIndex < stickyColumnsCount
+              ? {
+                  position: "sticky",
+                  left: `${stickyColumnOffsets[colIndex]}px`,
+                  zIndex: "10",
+                  backgroundColor: "white",
+                }
+              : {}
+          }
+          ref={columnRefs[colIndex]}
+        >
           <TableHeaderCellContent
             isSorted={colIndex === sortColumn}
             onClick={onClick}
@@ -157,14 +204,27 @@ function TableSimple({
         </th>
       );
     },
-    [sortColumn, sortDirection, getColumnTitle, setSort],
+    [
+      sortColumn,
+      sortDirection,
+      stickyColumnOffsets,
+      stickyColumnsCount,
+      columnRefs,
+      getColumnTitle,
+      setSort,
+    ],
   );
 
   const renderRow = useCallback(
     (rowIndex, index) => {
       const ref = index === 0 ? firstRowRef : null;
       return (
-        <tr key={rowIndex} ref={ref} data-testid="table-row">
+        <tr
+          key={rowIndex}
+          ref={ref}
+          data-testid="table-row"
+          style={{ position: "relative" }}
+        >
           {data.rows[rowIndex].map((value, columnIndex) => (
             <TableCell
               key={`${rowIndex}-${columnIndex}`}
@@ -173,6 +233,8 @@ function TableSimple({
               series={series}
               settings={settings}
               rowIndex={rowIndex}
+              stickyColumnsCount={stickyColumnsCount}
+              stickyColumnOffsets={stickyColumnOffsets}
               columnIndex={columnIndex}
               isPivoted={isPivoted}
               getCellBackgroundColor={getCellBackgroundColor}
@@ -189,6 +251,8 @@ function TableSimple({
       series,
       settings,
       isPivoted,
+      stickyColumnOffsets,
+      stickyColumnsCount,
       checkIsVisualizationClickable,
       getCellBackgroundColor,
       getExtraDataForClick,
@@ -202,7 +266,9 @@ function TableSimple({
         <TableContainer className="scroll-show scroll-show--hover">
           <Table className="fullscreen-normal-text fullscreen-night-text">
             <thead ref={headerRef}>
-              <tr>{cols.map(renderColumnHeader)}</tr>
+              <tr style={{ position: "relative" }}>
+                {cols.map(renderColumnHeader)}
+              </tr>
             </thead>
             <tbody>{paginatedRowIndexes.map(renderRow)}</tbody>
           </Table>

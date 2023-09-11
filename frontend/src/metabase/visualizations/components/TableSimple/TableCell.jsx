@@ -58,6 +58,8 @@ function TableCell({
   getExtraDataForClick,
   checkIsVisualizationClickable,
   onVisualizationClick,
+  stickyColumnOffsets,
+  stickyColumnsCount,
 }) {
   const { rows, cols } = data;
   const column = cols[columnIndex];
@@ -140,6 +142,12 @@ function TableCell({
       className={classNames}
       backgroundColor={backgroundColor}
       isRightAligned={isColumnRightAligned(column)}
+      sticky={columnIndex < stickyColumnsCount}
+      leftOffset={
+        columnIndex < stickyColumnsCount
+          ? stickyColumnOffsets[columnIndex]
+          : null
+      }
     >
       <CellContent
         className="cellData"

@@ -29,7 +29,7 @@ export const TableContainer = styled.div`
 `;
 
 const standardTableStyleReset = css`
-  border-collapse: collapse;
+  border-collapse: separate;
   border-spacing: 0;
 
   width: 100%;

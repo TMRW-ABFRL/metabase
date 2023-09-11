@@ -6,6 +6,8 @@ import { color } from "metabase/lib/colors";
 export const CellRoot = styled.td<{
   isRightAligned: boolean;
   backgroundColor?: string;
+  sticky?: boolean;
+  leftOffset?: number;
 }>`
   padding-left: 0.5rem;
   padding-right: 0.5rem;
@@ -18,9 +20,19 @@ export const CellRoot = styled.td<{
   border-bottom: 1px solid ${color("border")};
 
   background-color: ${props => props.backgroundColor ?? "unset"};
+
+  ${props =>
+    props.sticky &&
+    css`
+      position: sticky;
+      left: ${props.leftOffset}px;
+      background-color: white;
+    `}
 `;
 
-export const CellContent = styled.span<{ isClickable: boolean }>`
+export const CellContent = styled.span<{
+  isClickable: boolean;
+}>`
   display: inline-block;
 
   ${props =>
