@@ -152,6 +152,13 @@ export default class Table extends Component {
       },
       persistDefault: true,
     },
+    "table.infinite_scroll": {
+      section: t`Columns`,
+      title: t`Infinite Scroll`,
+      widget: "toggle",
+      getDefault: () => false,
+      persistDefault: true,
+    },
     ...tableColumnSettings,
     "table.column_widths": {},
     [DataGrid.COLUMN_FORMATTING_SETTING]: {
@@ -380,7 +387,6 @@ export default class Table extends Component {
 
   render() {
     const { series, isDashboard, settings } = this.props;
-    console.log("SETTINGS", settings);
     const { data } = this.state;
     const [{ card }] = series;
     const sort = getIn(card, ["dataset_query", "query", "order-by"]) || null;

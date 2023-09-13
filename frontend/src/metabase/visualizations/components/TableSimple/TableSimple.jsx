@@ -17,7 +17,6 @@ import Ellipsified from "metabase/core/components/Ellipsified";
 import { isPositiveInteger } from "metabase/lib/number";
 import { isColumnRightAligned } from "metabase/visualizations/lib/table";
 import { isID } from "metabase-lib/types/utils/isa";
-
 import TableCell from "./TableCell";
 import TableFooter from "./TableFooter";
 import {
@@ -27,7 +26,17 @@ import {
   TableContainer,
   TableHeaderCellContent,
   SortIcon,
+  TableHeaderRoot,
+  TableHead,
 } from "./TableSimple.styled";
+
+const ROW_HEIGHT = 36;
+const SCREEN_HEIGHT = Math.max(
+  document.documentElement.clientHeight,
+  window.innerHeight || 0,
+); // get the height of the screen
+const OFFSET = SCREEN_HEIGHT; // We want to render more than we see, or else we will see nothing when scrolling fast
+const ROWS_TO_RENDER = Math.floor((SCREEN_HEIGHT + OFFSET) / ROW_HEIGHT);
 
 function getBoundingClientRectSafe(ref) {
   return ref.current?.getBoundingClientRect?.() ?? {};
@@ -66,7 +75,12 @@ function TableSimple({
   const [pageSize, setPageSize] = useState(1);
   const [sortColumn, setSortColumn] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
-  const [stickyColumnOffsets, setStickyColumnOffsets] = useState([]);
+  const [stickyColumnOffsets, setStickyColumnOffsets] = useState(
+    new Array(cols.length).fill(0),
+  );
+  const [displayStart, setDisplayStart] = useState(0);
+  const [displayEnd, setDisplayEnd] = useState(0);
+  const [scrollPosition, setScrollPosition] = useState(0);
 
   const headerRef = useRef(null);
   const footerRef = useRef(null);
@@ -111,6 +125,7 @@ function TableSimple({
   const limit = getIn(card, ["dataset_query", "query", "limit"]) || undefined;
   const getCellBackgroundColor = settings["table._cell_background_getter"];
   const stickyColumnsCount = parseInt(settings["table.sticky_columns"] || 0);
+  const infiniteScroll = settings["table.infinite_scroll"] || false;
 
   const start = pageSize * page;
   const end = Math.min(rows.length - 1, pageSize * (page + 1) - 1);
@@ -141,10 +156,64 @@ function TableSimple({
     return indexes;
   }, [cols, rows, sortColumn, sortDirection]);
 
+  const setDisplayPositions = useCallback(
+    scroll => {
+      // we want to start rendering a bit above the visible screen
+      const scrollWithOffset = Math.floor(scroll - ROWS_TO_RENDER - OFFSET / 2);
+      // start position should never be less than 0
+      const displayStartPosition = Math.round(
+        Math.max(0, Math.floor(scrollWithOffset / ROW_HEIGHT)),
+      );
+
+      // end position should never be larger than our data array
+      const displayEndPosition = Math.round(
+        Math.min(displayStartPosition + ROWS_TO_RENDER, rowIndexes.length),
+      );
+
+      setDisplayStart(displayStartPosition);
+      setDisplayEnd(displayEndPosition);
+    },
+    [rowIndexes.length],
+  );
+
+  useEffect(() => {
+    const table = document.getElementById("table-simple");
+    const onScroll = _.throttle(() => {
+      const scrollTop = table.scrollTop;
+      if (rowIndexes.length !== 0) {
+        setScrollPosition(scrollTop);
+        setDisplayPositions(scrollTop);
+      }
+    }, 100);
+
+    table.addEventListener("scroll", onScroll);
+
+    return () => {
+      table.removeEventListener("scroll", onScroll);
+    };
+  }, [setDisplayPositions, setScrollPosition, rowIndexes.length]);
+
+  useEffect(() => {
+    setDisplayPositions(scrollPosition);
+  }, [scrollPosition, setDisplayPositions]);
+
   const paginatedRowIndexes = useMemo(
     () => rowIndexes.slice(start, end + 1),
     [rowIndexes, start, end],
   );
+
+  const indexesToRender = useMemo(() => {
+    if (infiniteScroll) {
+      return rowIndexes.slice(displayStart, displayEnd);
+    }
+    return paginatedRowIndexes;
+  }, [
+    infiniteScroll,
+    rowIndexes,
+    paginatedRowIndexes,
+    displayStart,
+    displayEnd,
+  ]);
 
   useEffect(() => {
     const tableHeaders = columnRefs.map(ref => ref.current);
@@ -153,14 +222,25 @@ function TableSimple({
       for (const entry of entries) {
         if (entry.target === tableHeaders[0]) {
           let initialOffset = 0;
-          const updatedOffsets = tableHeaders.map(header => {
+          const updatedOffsets = [];
+          tableHeaders.forEach(header => {
             const boundingRect = header.getBoundingClientRect();
             const { width } = boundingRect;
-            const currentOffset = initialOffset;
+            updatedOffsets.push(initialOffset);
             initialOffset += width;
-            return currentOffset;
           });
-          setStickyColumnOffsets(updatedOffsets);
+
+          setStickyColumnOffsets(currentOffsets => {
+            if (
+              currentOffsets.some(
+                (currentOffset, index) =>
+                  currentOffset !== updatedOffsets[index],
+              )
+            ) {
+              return updatedOffsets;
+            }
+            return currentOffsets;
+          });
         }
       }
     };
@@ -178,20 +258,12 @@ function TableSimple({
       const iconName = sortDirection === "desc" ? "chevrondown" : "chevronup";
       const onClick = () => setSort(colIndex);
       return (
-        <th
+        <TableHeaderRoot
           key={colIndex}
           data-testid="column-header"
-          style={
-            colIndex < stickyColumnsCount
-              ? {
-                  position: "sticky",
-                  left: `${stickyColumnOffsets[colIndex]}px`,
-                  zIndex: "10",
-                  backgroundColor: "white",
-                }
-              : {}
-          }
           ref={columnRefs[colIndex]}
+          isSticky={colIndex < stickyColumnsCount}
+          leftOffset={stickyColumnOffsets[colIndex]}
         >
           <TableHeaderCellContent
             isSorted={colIndex === sortColumn}
@@ -201,7 +273,7 @@ function TableSimple({
             <SortIcon name={iconName} />
             <Ellipsified>{getColumnTitle(colIndex)}</Ellipsified>
           </TableHeaderCellContent>
-        </th>
+        </TableHeaderRoot>
       );
     },
     [
@@ -233,8 +305,8 @@ function TableSimple({
               series={series}
               settings={settings}
               rowIndex={rowIndex}
-              stickyColumnsCount={stickyColumnsCount}
-              stickyColumnOffsets={stickyColumnOffsets}
+              isSticky={columnIndex < stickyColumnsCount}
+              leftOffset={stickyColumnOffsets[columnIndex]}
               columnIndex={columnIndex}
               isPivoted={isPivoted}
               getCellBackgroundColor={getCellBackgroundColor}
@@ -264,20 +336,40 @@ function TableSimple({
     <Root className={className}>
       <ContentContainer>
         <TableContainer className="scroll-show scroll-show--hover">
-          <Table className="fullscreen-normal-text fullscreen-night-text">
-            <thead ref={headerRef}>
+          <Table
+            className="fullscreen-normal-text fullscreen-night-text"
+            infiniteScroll={infiniteScroll}
+            id="table-simple"
+          >
+            <TableHead ref={headerRef} infiniteScroll={infiniteScroll}>
               <tr style={{ position: "relative" }}>
                 {cols.map(renderColumnHeader)}
               </tr>
-            </thead>
-            <tbody>{paginatedRowIndexes.map(renderRow)}</tbody>
+            </TableHead>
+            <tbody>
+              {infiniteScroll && (
+                <tr
+                  key="startRowFiller"
+                  style={{ height: displayStart * ROW_HEIGHT }}
+                ></tr>
+              )}
+              {indexesToRender.map(renderRow)}
+              {infiniteScroll && (
+                <tr
+                  key="endRowFiller"
+                  style={{
+                    height: (rowIndexes.length - displayEnd) * ROW_HEIGHT,
+                  }}
+                ></tr>
+              )}
+            </tbody>
           </Table>
         </TableContainer>
       </ContentContainer>
       {pageSize < rows.length && (
         <TableFooter
-          start={start}
-          end={end}
+          start={infiniteScroll ? 0 : start}
+          end={infiniteScroll ? rowIndexes.length - 1 : end}
           limit={limit}
           total={rows.length}
           onPreviousPage={handlePreviousPage}

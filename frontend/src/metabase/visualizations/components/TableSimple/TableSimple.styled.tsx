@@ -39,8 +39,16 @@ const standardTableStyleReset = css`
   text-align: left;
 `;
 
-export const Table = styled.table`
+export const Table = styled.table<{ infiniteScroll: boolean }>`
   ${standardTableStyleReset}
+
+  ${props =>
+    props.infiniteScroll &&
+    css`
+      display: block;
+      height: 100%;
+      overflow: scroll;
+    `}
 
   tr {
     border-bottom: 1px solid ${color("table-border")};
@@ -67,6 +75,32 @@ export const SortIcon = styled(Icon)`
 SortIcon.defaultProps = {
   size: 8,
 };
+
+export const TableHead = styled.thead<{
+  infiniteScroll: boolean;
+}>`
+  ${props =>
+    props.infiniteScroll &&
+    css`
+      position: sticky;
+      top: 0px;
+      z-index: 5;
+    `}
+`;
+
+export const TableHeaderRoot = styled.th<{
+  isSticky: boolean;
+  leftOffset: number;
+}>`
+  z-index: 10;
+  background-color: white;
+  ${props =>
+    props.isSticky &&
+    css`
+      position: sticky;
+      left: ${props.leftOffset}px;
+    `}
+`;
 
 export const TableHeaderCellContent = styled.button<{
   isSorted: boolean;

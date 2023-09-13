@@ -44,7 +44,7 @@ export const EditColumnsRoot = styled.div<{
   top: 0;
   height: 110%;
   width: 400px;
-  z-index: 10;
+  z-index: ${props => (props.isOpen ? 10 : -1)};
   background-color: white;
   border-width: 2px;
   border-style: solid;
