@@ -26,7 +26,6 @@ export const CellRoot = styled.td<{
     css`
       position: sticky;
       left: ${props.leftOffset}px;
-      background-color: white;
     `}
 `;
 

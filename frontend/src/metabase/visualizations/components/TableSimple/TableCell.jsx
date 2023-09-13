@@ -140,7 +140,9 @@ function TableCell({
   return (
     <CellRoot
       className={classNames}
-      backgroundColor={backgroundColor}
+      backgroundColor={
+        backgroundColor || isSticky ? backgroundColor || "white" : null
+      }
       isRightAligned={isColumnRightAligned(column)}
       sticky={isSticky}
       leftOffset={leftOffset}
