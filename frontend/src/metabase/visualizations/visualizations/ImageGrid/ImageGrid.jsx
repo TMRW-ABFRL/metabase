@@ -9,7 +9,8 @@ import React, {
 } from "react";
 import { t } from "ttag";
 import ReactGridLayout from "react-grid-layout";
-import { columnSettings } from "metabase/visualizations/lib/settings/column";
+import { makeCellBackgroundGetter } from "metabase/visualizations/lib/table_format";
+import ChartSettingsTableFormatting from "metabase/visualizations/components/settings/ChartSettingsTableFormatting";
 import ImageGridCard from "../../../visualizations/components/ImageGridCard";
 import TableFooter from "../../components/TableSimple/TableFooter";
 import EditColumns from "./EditColumns";
@@ -25,8 +26,11 @@ const ROW_HEIGHT = 0.15;
 const INITIAL_NO_OF_COLUMNS = 4;
 const NO_OF_ROWS = 20;
 
+const isFormattable = column =>
+  !["product_title", "image_url"].includes(column.display_name);
+
 const ImageGridComponent = props => {
-  const { data: gridData, columns } = props;
+  const { data: gridData, columns, settings } = props;
 
   const [columnCount, setColumnCount] = useState(INITIAL_NO_OF_COLUMNS);
   const [cardHeight, setCardHeight] = useState(MIN_CARD_HEIGHT);
@@ -47,6 +51,8 @@ const ImageGridComponent = props => {
     columnCount * NO_OF_ROWS * (page + 1) - 1,
   );
 
+  const getCellBackgroundColor = settings["image_grid._cell_background_getter"];
+
   const handlePreviousPage = useCallback(() => {
     setPage(p => p - 1);
   }, []);
@@ -62,11 +68,16 @@ const ImageGridComponent = props => {
     (row, index) => {
       return (
         <div key={index}>
-          <ImageGridCard row={row} columnState={columnState} />
+          <ImageGridCard
+            row={row}
+            rowIndex={index}
+            columnState={columnState}
+            getCellBackgroundColor={getCellBackgroundColor}
+          />
         </div>
       );
     },
-    [columnState],
+    [columnState, getCellBackgroundColor],
   );
 
   const generateLayout = useCallback((cardCount, noOfColumns, cardHeight) => {
@@ -187,7 +198,45 @@ class ImageGrid extends Component {
   static identifier = "image_grid";
 
   static settings = {
-    ...columnSettings({ hidden: true }),
+    "image_grid.row_format": {
+      section: t`Conditional Formatting`,
+      widget: ChartSettingsTableFormatting,
+      default: [],
+      getProps: series => {
+        return {
+          cols: series[0].data.cols.filter(isFormattable),
+          isPivoted: false,
+          canHighlightRow: false,
+        };
+      },
+
+      getHidden: (
+        [
+          {
+            data: { cols },
+          },
+        ],
+        settings,
+      ) => cols.filter(isFormattable).length === 0,
+    },
+    "image_grid._cell_background_getter": {
+      getValue(
+        [
+          {
+            data: { rows, cols },
+          },
+        ],
+        settings,
+      ) {
+        return makeCellBackgroundGetter(
+          rows,
+          cols,
+          settings["image_grid.row_format"] ?? [],
+          false,
+        );
+      },
+      readDependencies: ["image_grid.row_format"],
+    },
   };
 
   constructor(props) {
@@ -225,12 +274,14 @@ class ImageGrid extends Component {
   }
 
   render() {
+    const { settings } = this.props;
     return (
       <ImageGridComponent
         data={this.state.data}
         columns={this.state.columns.filter(
           column => !["product_title", "image_url"].includes(column),
         )}
+        settings={settings}
       />
     );
   }
