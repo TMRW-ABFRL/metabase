@@ -14,7 +14,12 @@ import { getColumnExtent } from "metabase/visualizations/lib/utils";
 import { isID, isFK } from "metabase-lib/types/utils/isa";
 
 import MiniBar from "../MiniBar";
-import { CellRoot, CellContent } from "./TableCell.styled";
+import {
+  CellRoot,
+  CellContent,
+  CellWhiteBackground,
+  CellFormattedBackground,
+} from "./TableCell.styled";
 
 function getCellData({
   value,
@@ -147,9 +152,19 @@ function TableCell({
       sticky={isSticky}
       leftOffset={leftOffset}
     >
+      {isSticky && <CellWhiteBackground />}
+      {isSticky && (
+        <CellFormattedBackground
+          backgroundColor={
+            backgroundColor || isSticky ? backgroundColor || "white" : null
+          }
+        />
+      )}
+
       <CellContent
         className="cellData"
         isClickable={isClickable}
+        sticky={isSticky}
         onClick={isClickable ? onClick : undefined}
         data-testid="cell-data"
       >

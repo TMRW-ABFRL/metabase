@@ -29,9 +29,37 @@ export const CellRoot = styled.td<{
     `}
 `;
 
+export const CellWhiteBackground = styled.div`
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: white;
+  z-index: 5;
+`;
+
+export const CellFormattedBackground = styled.div<{ backgroundColor: string }>`
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: ${props => props.backgroundColor ?? "unset"};
+  z-index: 10;
+`;
+
 export const CellContent = styled.span<{
   isClickable: boolean;
+  sticky: boolean;
 }>`
+  ${props =>
+    props.sticky &&
+    css`
+      position: relative;
+      z-index: 10;
+    `}
+
   display: inline-block;
 
   ${props =>
