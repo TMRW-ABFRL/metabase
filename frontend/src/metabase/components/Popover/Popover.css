@@ -1,7 +1,7 @@
 /* afaik popover needs a positioning context to be able to calculate the transform */
 .PopoverContainer {
   position: absolute;
-  z-index: 6;
+  z-index: 4;
 }
 
 .PopoverBody {

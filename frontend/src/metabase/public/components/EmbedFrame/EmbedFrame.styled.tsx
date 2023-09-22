@@ -36,17 +36,13 @@ export const Root = styled.div<{
 export const ContentContainer = styled.div<{ hasScroll: boolean }>`
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1 0 auto;
   position: relative;
 
   overflow-y: ${props => props.hasScroll && "auto"};
 `;
 
 export const Header = styled.header`
-  position: sticky;
-  top: 0;
-  background-color: white;
-  z-index: 5;
   display: flex;
   flex-direction: column;
   padding: 0.5rem;
