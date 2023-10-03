@@ -82,6 +82,7 @@ function TableSimple({
   const [displayEnd, setDisplayEnd] = useState(0);
   const [scrollPosition, setScrollPosition] = useState(0);
 
+  const tableRef = useRef(null);
   const headerRef = useRef(null);
   const footerRef = useRef(null);
   const firstRowRef = useRef(null);
@@ -177,20 +178,22 @@ function TableSimple({
   );
 
   useEffect(() => {
-    const table = document.getElementById("table-simple");
-    const onScroll = _.throttle(() => {
-      const scrollTop = table.scrollTop;
-      if (rowIndexes.length !== 0) {
-        setScrollPosition(scrollTop);
-        setDisplayPositions(scrollTop);
-      }
-    }, 100);
+    if (tableRef && tableRef.current) {
+      const table = tableRef.current;
+      const onScroll = _.throttle(() => {
+        const scrollTop = table.scrollTop;
+        if (rowIndexes.length !== 0) {
+          setScrollPosition(scrollTop);
+          setDisplayPositions(scrollTop);
+        }
+      }, 100);
 
-    table.addEventListener("scroll", onScroll);
+      table.addEventListener("scroll", onScroll);
 
-    return () => {
-      table.removeEventListener("scroll", onScroll);
-    };
+      return () => {
+        table.removeEventListener("scroll", onScroll);
+      };
+    }
   }, [setDisplayPositions, setScrollPosition, rowIndexes.length]);
 
   useEffect(() => {
@@ -339,7 +342,7 @@ function TableSimple({
           <Table
             className="fullscreen-normal-text fullscreen-night-text"
             infiniteScroll={infiniteScroll}
-            id="table-simple"
+            ref={tableRef}
           >
             <TableHead ref={headerRef} infiniteScroll={infiniteScroll}>
               <tr style={{ position: "relative" }}>
