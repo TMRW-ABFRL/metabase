@@ -25,6 +25,7 @@ import Funnel from "./visualizations/Funnel";
 import Gauge from "./visualizations/Gauge";
 import ObjectDetail from "./visualizations/ObjectDetail";
 import PivotTable from "./visualizations/PivotTable";
+import TreeMap from "./visualizations/TreeMap/TreeMap";
 
 export default function () {
   registerVisualization(Scalar);
@@ -48,5 +49,6 @@ export default function () {
   registerVisualization(PivotTable);
   registerVisualization(ActionViz);
   registerVisualization(ImageGrid);
+  registerVisualization(TreeMap);
   setDefaultVisualization(Table);
 }
