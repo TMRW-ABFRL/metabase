@@ -152,7 +152,7 @@ export function numberFormatterForOptions(options: FormatNumberOptionsType) {
   options = { ...getDefaultNumberOptions(options), ...options };
   // always use "en" locale so we have known number separators we can replace depending on number_separators option
   // TODO: if we do that how can we get localized currency names?
-  return new Intl.NumberFormat("en", {
+  return new Intl.NumberFormat("en-IN", {
     style: options.number_style,
     currency: options.currency,
     currencyDisplay: options.currency_style,
