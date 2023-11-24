@@ -57,7 +57,10 @@
   [user group-ids]
   (let [user-id (u/the-id user) 
         excluded-group-ids #{(u/the-id (perms-group/all-users))} 
-        existing-user-groups-set (t2/select-fn-set :group_id PermissionsGroupMembership {:where [:= :user_id user-id]}) 
+        existing-user-groups-set (t2/select-fn-set :group_id PermissionsGroupMembership 
+                                                   {:where [:and
+                                                            [:= :user_id user-id]
+                                                            [:not= :group_id (u/the-id (perms-group/all-users))]]}) 
         updated-user-groups-set (set group-ids) 
         [to-remove to-add] (data/diff existing-user-groups-set updated-user-groups-set)]
        (when (seq to-remove)
