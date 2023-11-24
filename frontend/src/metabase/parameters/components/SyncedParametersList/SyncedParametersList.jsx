@@ -1,15 +1,17 @@
-import React from "react";
+import React, { useEffect } from "react";
 import PropTypes from "prop-types";
-
+import { connect } from "react-redux";
 import ParametersList from "metabase/parameters/components/ParametersList";
 import { useSyncedQueryString } from "metabase/hooks/use-synced-query-string";
 import { getParameterValuesBySlug } from "metabase-lib/parameters/utils/parameter-values";
+import { getUser } from "../../../reference/selectors";
 
 const propTypes = {
   parameters: PropTypes.array.isRequired,
   editingParameter: PropTypes.object,
   question: PropTypes.object,
   dashboard: PropTypes.object,
+  user: PropTypes.object,
 
   className: PropTypes.string,
   hideParameters: PropTypes.string,
@@ -23,6 +25,10 @@ const propTypes = {
   setParameterIndex: PropTypes.func,
   setEditingParameter: PropTypes.func,
 };
+
+const mapStateToProps = (state, props) => ({
+  user: getUser(state),
+});
 
 export function SyncedParametersList({
   parameters,
@@ -41,6 +47,8 @@ export function SyncedParametersList({
   setParameterValue,
   setParameterIndex,
   setEditingParameter,
+
+  user,
 }) {
   useSyncedQueryString(
     () =>
@@ -51,6 +59,15 @@ export function SyncedParametersList({
       ),
     [parameters, dashboard],
   );
+
+  useEffect(() => {
+    const brandParam = parameters.find(
+      param => param.name.toLowerCase() === "brand",
+    );
+    if (brandParam && !brandParam.value && user?.brands) {
+      setParameterValue(brandParam.id, user.brands);
+    }
+  }, [parameters, user, setParameterValue]);
 
   return (
     <ParametersList
@@ -73,4 +90,4 @@ export function SyncedParametersList({
 
 SyncedParametersList.propTypes = propTypes;
 
-export default SyncedParametersList;
+export default connect(mapStateToProps)(SyncedParametersList);

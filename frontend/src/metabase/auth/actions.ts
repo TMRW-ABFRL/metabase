@@ -17,6 +17,41 @@ import {
   trackPasswordReset,
 } from "./analytics";
 import { LoginData } from "./types";
+import { getSSOUrl } from "./utils";
+
+export const LOGIN_SSO = "metabase/auth/LOGIN_SSO";
+export const loginSSO = createThunkAction(
+  LOGIN_SSO,
+  (redirectUrl: string) => async () => {
+    window.location.href = getSSOUrl(redirectUrl);
+  },
+);
+
+export const EXCHANGE_CODE = "metabase/auth/EXCHANGE_CODE";
+export const exchangeCode = createThunkAction(
+  EXCHANGE_CODE,
+  (code?: string, state?: string) => async (dispatch: any) => {
+    if (!code) {
+      dispatch(push("/auth/login_new"));
+      return;
+    }
+
+    const siteUrl = MetabaseSettings.get("site-url");
+    const azureRedirectTo = `${siteUrl}/auth/sso-redirect`;
+    const redirectUrl = `${siteUrl}${
+      (state ? JSON.parse(state).origin : null) || "/"
+    }`;
+
+    await SessionApi.exchange_code({
+      cognito_redirect: azureRedirectTo,
+      code,
+      return_to: redirectUrl,
+    });
+
+    await dispatch(refreshSession());
+    trackLogin();
+  },
+);
 
 export const REFRESH_LOCALE = "metabase/user/REFRESH_LOCALE";
 export const refreshLocale = createThunkAction(

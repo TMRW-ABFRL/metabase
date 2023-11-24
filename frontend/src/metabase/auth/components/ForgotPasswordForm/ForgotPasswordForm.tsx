@@ -61,7 +61,7 @@ const ForgotPasswordForm = ({
         </Form>
       </FormProvider>
       <PasswordFormFooter>
-        <PasswordFormLink to="/auth/login">{t`Back to sign in`}</PasswordFormLink>
+        <PasswordFormLink to="/auth/login_new">{t`Back to sign in`}</PasswordFormLink>
       </PasswordFormFooter>
     </div>
   );

@@ -1,5 +1,5 @@
 export const login = (redirectUrl?: string) => {
   return redirectUrl
-    ? `/auth/login?redirect=${encodeURIComponent(redirectUrl)}`
-    : "/auth/login";
+    ? `/auth/login_new?redirect=${encodeURIComponent(redirectUrl)}`
+    : "/auth/login_new";
 };

@@ -37,6 +37,7 @@
    [metabase.api.setting :as api.setting]
    [metabase.api.setup :as api.setup]
    [metabase.api.slack :as api.slack]
+   [metabase.api.sso :as api.sso]
    [metabase.api.table :as api.table]
    [metabase.api.task :as api.task]
    [metabase.api.testing :as api.testing]
@@ -98,6 +99,7 @@
   (context "/setting"              [] (+auth api.setting/routes))
   (context "/setup"                [] api.setup/routes)
   (context "/slack"                [] (+auth api.slack/routes))
+  (context "/sso"                  [] api.sso/routes)
   (context "/table"                [] (+auth api.table/routes))
   (context "/task"                 [] (+auth api.task/routes))
   (context "/testing"              [] (if (or (not config/is-prod?)

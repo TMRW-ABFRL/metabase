@@ -39,6 +39,7 @@ import {
   canSearchParameterValues,
   getSourceType,
 } from "metabase-lib/parameters/utils/parameter-source";
+import { getUser } from "../reference/selectors";
 
 const MAX_SEARCH_RESULTS = 100;
 
@@ -65,6 +66,7 @@ function mapStateToProps(state, { fields = [] }) {
       field =>
         Fields.selectors.getObject(state, { entityId: field.id }) || field,
     ),
+    user: getUser(state),
   };
 }
 
@@ -120,6 +122,7 @@ class FieldValuesWidgetInner extends Component {
     disableList: false,
     disableSearch: false,
     showOptionsInPopover: false,
+    user: null,
   };
 
   componentDidMount() {
@@ -175,7 +178,13 @@ class FieldValuesWidgetInner extends Component {
       this.updateRemappings(options);
       this.setState({
         loadingState: "LOADED",
-        options,
+        options:
+          this.props.parameter.name.toLowerCase() === "brand" &&
+          this.props.user?.brands
+            ? options.filter(option =>
+                this.props.user?.brands.includes(option[0]),
+              )
+            : options,
         valuesMode,
       });
     }

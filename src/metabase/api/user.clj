@@ -1,6 +1,9 @@
 (ns metabase.api.user
   "/api/user endpoints"
   (:require
+   [cheshire.core :as json]
+   [clj-http.client :as http]
+   [clojure.string :as str]
    [compojure.core :refer [DELETE GET POST PUT]]
    [honey.sql.helpers :as sql.helpers]
    [java-time :as t]
@@ -10,14 +13,16 @@
    [metabase.api.ldap :as api.ldap]
    [metabase.email.messages :as messages]
    [metabase.integrations.google :as google]
+   [metabase.integrations.jwt.sso-settings :as sso-settings]
    [metabase.models.collection :as collection :refer [Collection]]
    [metabase.models.login-history :refer [LoginHistory]]
    [metabase.models.permissions-group :as perms-group]
-   [metabase.models.user :as user :refer [User]]
+   [metabase.models.user :as user :refer [User]] 
    [metabase.plugins.classloader :as classloader]
    [metabase.public-settings.premium-features :as premium-features]
    [metabase.server.middleware.offset-paging :as mw.offset-paging]
    [metabase.util :as u]
+   [metabase.util.log :as log]
    [metabase.util.i18n :refer [tru]]
    [metabase.util.password :as u.password]
    [metabase.util.schema :as su]
@@ -215,6 +220,18 @@
             (t/offset-date-time))]
     (assoc user :first_login ts)))
 
+(defn- add-user-brands
+  [user]
+  (try
+    (let [brands_api_url (str (sso-settings/data-api-base-url) (sso-settings/data-api-brands-endpoint) "?email=" (:email @api/*current-user*))
+          response (http/get brands_api_url)
+          {:keys [body]} response
+          brands (get (json/parse-string body) "brands")
+          brands_vector (str/split brands #",")]
+      (assoc user :brands brands_vector))
+    (catch clojure.lang.ExceptionInfo _e
+     (log/warn "Error while fetching brands associated with the current user"))))
+
 #_{:clj-kondo/ignore [:deprecated-var]}
 (api/defendpoint-schema GET "/current"
   "Fetch the current `User`."
@@ -223,6 +240,7 @@
       (hydrate :personal_collection_id :group_ids :is_installer :has_invited_second_user)
       add-has-question-and-dashboard
       add-first-login
+      add-user-brands
       maybe-add-advanced-permissions
       maybe-add-sso-source))
 

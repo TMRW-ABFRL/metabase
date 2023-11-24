@@ -362,6 +362,7 @@ export const SessionApi = {
   forgot_password: POST("/api/session/forgot_password"),
   reset_password: POST("/api/session/reset_password"),
   password_reset_token_valid: GET("/api/session/password_reset_token_valid"),
+  exchange_code: POST("/api/sso/exchange_code"),
 };
 
 export const SettingsApi = {

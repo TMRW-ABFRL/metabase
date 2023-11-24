@@ -12,8 +12,8 @@ const PasswordButton = ({
   redirectUrl,
 }: PasswordButtonProps) => {
   const link = redirectUrl
-    ? `/auth/login/password?redirect=${encodeURIComponent(redirectUrl)}`
-    : `/auth/login/password`;
+    ? `/auth/login_new/password?redirect=${encodeURIComponent(redirectUrl)}`
+    : `/auth/login_new/password`;
 
   return (
     <AuthButton link={link}>

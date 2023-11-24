@@ -87,6 +87,8 @@ import { getAdminPaths } from "metabase/admin/app/selectors";
 
 import ActionCreatorModal from "metabase/actions/containers/ActionCreatorModal";
 import ModelDetailPage from "metabase/models/containers/ModelDetailPage";
+import LoginNew from "./auth/components/Login/LoginNew";
+import SSORedirect from "./auth/components/SSORedirect";
 
 const MetabaseIsSetup = UserAuthWrapper({
   predicate: authData => authData.hasUserSetup,
@@ -98,7 +100,7 @@ const MetabaseIsSetup = UserAuthWrapper({
 });
 
 const UserIsAuthenticated = UserAuthWrapper({
-  failureRedirectPath: "/auth/login",
+  failureRedirectPath: "/auth/login_new",
   authSelector: state => state.currentUser,
   wrapperDisplayName: "UserIsAuthenticated",
   redirectAction: routerActions.replace,
@@ -182,9 +184,20 @@ export const getRoutes = store => (
     >
       {/* AUTH */}
       <Route path="/auth">
-        <IndexRedirect to="/auth/login" />
+        <IndexRedirect to="/auth_new" />
         <Route component={IsNotAuthenticated}>
           <Route path="login" title={t`Login`} component={LoginApp} />
+          <Route path="login_new" title={t`Login`} component={LoginNew} />
+          <Route
+            path="sso-redirect"
+            title={t`SSO Redirect`}
+            component={SSORedirect}
+          />
+          <Route
+            path="login_new/:provider"
+            title={t`Login`}
+            component={LoginNew}
+          />
           <Route path="login/:provider" title={t`Login`} component={LoginApp} />
         </Route>
         <Route path="logout" component={LogoutApp} />
