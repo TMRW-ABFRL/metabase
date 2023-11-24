@@ -29,8 +29,6 @@
 (defn fetch-or-create-user!
   "Returns a session map for the given `email`. Will create the user if needed."
   [first-name last-name email user-attributes]
-  ;; (when-not (sso-settings/jwt-enabled)
-  ;;   (throw (IllegalArgumentException. (str (tru "Can't create new JWT user when JWT is not configured")))))
   (let [user {:first_name       first-name
               :last_name        last-name
               :email            email
@@ -134,7 +132,7 @@
       (log/error #_e (trs "Error exchanging code"))
       (throw e))))
 
-(defn sso-get
+(defn sso-code-exchange
   [{{:keys [code cognito_redirect return_to]} :body, :as request}]
   (let [{:keys [jwt user_groups]} (exchange-code-for-jwt code cognito_redirect)]
     (if jwt
@@ -143,8 +141,3 @@
             return-to-param (if (str/includes? idp "?") "&return_to=" "?return_to=")]
         (response/redirect (str idp (when return_to
                                       (str return-to-param return_to))))))))
-      
-
-(defn sso-post
-  [_]
-  (throw (ex-info "POST not valid for JWT SSO requests" {:status-code 400})))
